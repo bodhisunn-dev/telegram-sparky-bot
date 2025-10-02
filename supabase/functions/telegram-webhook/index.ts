@@ -73,6 +73,13 @@ serve(async (req) => {
       is_bot_message: false
     });
 
+    // Randomly react to messages with emojis (30% chance)
+    if (Math.random() < 0.3 && messageText && !messageText.startsWith('/')) {
+      const reactions = ['👍', '❤️', '👏', '🔥', '⭐', '💯', '🎉'];
+      const randomReaction = reactions[Math.floor(Math.random() * reactions.length)];
+      await setMessageReaction(chatId, message.message_id, randomReaction);
+    }
+
     // Get bot config
     const { data: config } = await supabase.from('bot_config').select('*');
     const configMap = config?.reduce((acc, item) => {
@@ -246,5 +253,27 @@ async function sendTelegramPhoto(chatId: number, photoBase64: string) {
     }
   } catch (error) {
     console.error('Error sending photo:', error);
+  }
+}
+
+async function setMessageReaction(chatId: number, messageId: number, emoji: string) {
+  const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
+  if (!botToken) {
+    console.error('TELEGRAM_BOT_TOKEN not set');
+    return;
+  }
+
+  try {
+    await fetch(`https://api.telegram.org/bot${botToken}/setMessageReaction`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        message_id: messageId,
+        reaction: [{ type: 'emoji', emoji }],
+      }),
+    });
+  } catch (error) {
+    console.error('Error setting reaction:', error);
   }
 }

@@ -87,8 +87,8 @@ serve(async (req) => {
       return acc;
     }, {} as Record<string, any>) || {};
 
-    // Handle leaderboard commands
-    if (messageText.startsWith('/leaderboard') || messageText.startsWith('/top')) {
+    // Handle top users command
+    if (messageText.startsWith('/top')) {
       const { data: topUsers } = await supabase
         .from('telegram_users')
         .select('first_name, username, message_count, engagement_score')

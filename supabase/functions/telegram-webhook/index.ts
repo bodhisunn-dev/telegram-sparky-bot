@@ -73,9 +73,9 @@ serve(async (req) => {
       is_bot_message: false
     });
 
-    // Randomly react to messages with emojis (30% chance)
-    if (Math.random() < 0.3 && messageText && !messageText.startsWith('/')) {
-      const reactions = ['👍', '❤️', '👏', '🔥', '⭐', '💯', '🎉'];
+    // React to every message with a random emoji
+    if (messageText && !messageText.startsWith('/')) {
+      const reactions = ['👍', '❤️', '👏', '🔥', '⭐', '💯', '🎉', '🚀', '⚡', '✨', '🎯', '💪', '🌟'];
       const randomReaction = reactions[Math.floor(Math.random() * reactions.length)];
       await setMessageReaction(chatId, message.message_id, randomReaction);
     }

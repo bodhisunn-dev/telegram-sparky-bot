@@ -91,18 +91,32 @@ serve(async (req) => {
     if (messageText.startsWith('/top')) {
       const { data: topUsers } = await supabase
         .from('telegram_users')
-        .select('first_name, username, message_count, engagement_score')
+        .select('id, first_name, username, message_count, engagement_score')
         .order('engagement_score', { ascending: false })
         .order('message_count', { ascending: false })
         .limit(10);
 
       if (topUsers && topUsers.length > 0) {
         let leaderboardText = '🏆 *Top Chads/Chadettes* 🏆\n\n';
-        topUsers.forEach((user, index) => {
+        
+        for (const [index, user] of topUsers.entries()) {
           const name = user.first_name || user.username || 'Anonymous';
           const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
-          leaderboardText += `${medal} ${name}\n   💬 ${user.message_count} messages | 🔥 ${user.engagement_score} engagement\n\n`;
-        });
+          
+          // Count image generations for this user
+          const { count: imageCount } = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('telegram_user_id', user.id)
+            .ilike('message_text', '/generate%');
+          
+          leaderboardText += `${medal} ${name}\n`;
+          leaderboardText += `   💬 ${user.message_count} messages | 🔥 ${user.engagement_score} engagement`;
+          if (imageCount && imageCount > 0) {
+            leaderboardText += ` | 🎨 ${imageCount} images`;
+          }
+          leaderboardText += '\n\n';
+        }
         
         await sendTelegramMessage(chatId, leaderboardText);
       } else {

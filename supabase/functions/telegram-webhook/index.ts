@@ -192,15 +192,32 @@ async function sendTelegramPhoto(chatId: number, photoBase64: string) {
     return;
   }
 
-  // Remove data URL prefix if present
-  const base64Data = photoBase64.replace(/^data:image\/\w+;base64,/, '');
-  
-  await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: chatId,
-      photo: base64Data,
-    }),
-  });
+  try {
+    // Remove data URL prefix if present
+    const base64Data = photoBase64.replace(/^data:image\/\w+;base64,/, '');
+    
+    // Convert base64 to binary
+    const binaryString = atob(base64Data);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    
+    // Create form data
+    const formData = new FormData();
+    formData.append('chat_id', chatId.toString());
+    formData.append('photo', new Blob([bytes], { type: 'image/png' }), 'image.png');
+    
+    const response = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Telegram sendPhoto error:', response.status, errorText);
+    }
+  } catch (error) {
+    console.error('Error sending photo:', error);
+  }
 }

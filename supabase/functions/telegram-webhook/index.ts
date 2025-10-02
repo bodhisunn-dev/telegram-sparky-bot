@@ -80,6 +80,33 @@ serve(async (req) => {
       return acc;
     }, {} as Record<string, any>) || {};
 
+    // Handle leaderboard commands
+    if (messageText.startsWith('/leaderboard') || messageText.startsWith('/top')) {
+      const { data: topUsers } = await supabase
+        .from('telegram_users')
+        .select('first_name, username, message_count, engagement_score')
+        .order('engagement_score', { ascending: false })
+        .order('message_count', { ascending: false })
+        .limit(10);
+
+      if (topUsers && topUsers.length > 0) {
+        let leaderboardText = '🏆 *Top Chads/Chadettes* 🏆\n\n';
+        topUsers.forEach((user, index) => {
+          const name = user.first_name || user.username || 'Anonymous';
+          const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+          leaderboardText += `${medal} ${name}\n   💬 ${user.message_count} messages | 🔥 ${user.engagement_score} engagement\n\n`;
+        });
+        
+        await sendTelegramMessage(chatId, leaderboardText);
+      } else {
+        await sendTelegramMessage(chatId, 'No users yet! Start chatting to get on the leaderboard! 🚀');
+      }
+      
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     // Handle gm/gn auto-responses
     const lowerText = messageText.toLowerCase().trim();
     if (configMap.gm_enabled && (lowerText === 'gm' || lowerText.includes('good morning'))) {

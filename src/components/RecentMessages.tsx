@@ -1,54 +1,53 @@
 import { formatDistanceToNow } from "date-fns";
 import { Bot, User } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface RecentMessagesProps {
   expanded?: boolean;
 }
 
 const RecentMessages = ({ expanded = false }: RecentMessagesProps) => {
-  const messages = [
-    {
-      id: 1,
-      user: "Alice",
-      message: "Hey bot, can you generate an image of a sunset?",
-      isBot: false,
-      timestamp: new Date(Date.now() - 1000 * 60 * 5),
+  const { data: messages = [], isLoading } = useQuery({
+    queryKey: ['recent-messages', expanded],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('messages')
+        .select(`
+          id,
+          message_text,
+          is_bot_message,
+          created_at,
+          telegram_users (
+            first_name,
+            username
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(expanded ? 50 : 5);
+      
+      if (error) throw error;
+      return data.map(msg => ({
+        id: msg.id,
+        user: msg.is_bot_message ? 'Bot' : (msg.telegram_users?.first_name || msg.telegram_users?.username || 'Anonymous'),
+        message: msg.message_text,
+        isBot: msg.is_bot_message,
+        timestamp: new Date(msg.created_at),
+      }));
     },
-    {
-      id: 2,
-      user: "Bot",
-      message: "Sure! I'll generate a beautiful sunset image for you.",
-      isBot: true,
-      timestamp: new Date(Date.now() - 1000 * 60 * 4),
-    },
-    {
-      id: 3,
-      user: "Bob",
-      message: "gm everyone!",
-      isBot: false,
-      timestamp: new Date(Date.now() - 1000 * 60 * 10),
-    },
-    {
-      id: 4,
-      user: "Bot",
-      message: "Good morning Bob! ☀️",
-      isBot: true,
-      timestamp: new Date(Date.now() - 1000 * 60 * 9),
-    },
-    {
-      id: 5,
-      user: "Charlie",
-      message: "What's the weather like today?",
-      isBot: false,
-      timestamp: new Date(Date.now() - 1000 * 60 * 15),
-    },
-  ];
+  });
 
-  const displayMessages = expanded ? messages : messages.slice(0, 5);
+  if (isLoading) {
+    return <div className="text-muted-foreground">Loading messages...</div>;
+  }
+
+  if (messages.length === 0) {
+    return <div className="text-muted-foreground">No messages yet. Start chatting in your Telegram group!</div>;
+  }
 
   return (
     <div className="space-y-4">
-      {displayMessages.map((msg) => (
+      {messages.map((msg) => (
         <div
           key={msg.id}
           className="flex gap-3 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors"

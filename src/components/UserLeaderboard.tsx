@@ -1,24 +1,44 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface UserLeaderboardProps {
   expanded?: boolean;
 }
 
 const UserLeaderboard = ({ expanded = false }: UserLeaderboardProps) => {
-  const users = [
-    { name: "Alice", messages: 342, engagement: 95, rank: 1 },
-    { name: "Bob", messages: 287, engagement: 88, rank: 2 },
-    { name: "Charlie", messages: 251, engagement: 82, rank: 3 },
-    { name: "Diana", messages: 198, engagement: 75, rank: 4 },
-    { name: "Eve", messages: 176, engagement: 68, rank: 5 },
-  ];
+  const { data: users = [], isLoading } = useQuery({
+    queryKey: ['telegram-users-leaderboard'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('telegram_users')
+        .select('*')
+        .order('engagement_score', { ascending: false })
+        .order('message_count', { ascending: false })
+        .limit(expanded ? 100 : 5);
+      
+      if (error) throw error;
+      return data.map((user, index) => ({
+        rank: index + 1,
+        name: user.first_name || user.username || 'Anonymous',
+        messages: user.message_count || 0,
+        engagement: user.engagement_score || 0,
+      }));
+    },
+  });
 
-  const displayUsers = expanded ? users : users.slice(0, 5);
+  if (isLoading) {
+    return <div className="text-muted-foreground">Loading users...</div>;
+  }
+
+  if (users.length === 0) {
+    return <div className="text-muted-foreground">No users yet. Start chatting in your Telegram group!</div>;
+  }
 
   return (
     <div className="space-y-4">
-      {displayUsers.map((user) => (
+      {users.map((user) => (
         <div
           key={user.name}
           className="flex items-center gap-4 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors"

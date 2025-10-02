@@ -7,9 +7,11 @@ import MetricCard from "@/components/MetricCard";
 import UserLeaderboard from "@/components/UserLeaderboard";
 import RecentMessages from "@/components/RecentMessages";
 import BotConfig from "@/components/BotConfig";
+import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const { data: metrics, isLoading } = useDashboardMetrics();
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -43,29 +45,29 @@ const Index = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <MetricCard
                   title="Total Users"
-                  value="1,234"
-                  change="+12.5%"
+                  value={isLoading ? "..." : metrics?.totalUsers.toString() || "0"}
+                  change="Real-time"
                   icon={Users}
                   trend="up"
                 />
                 <MetricCard
                   title="Messages Today"
-                  value="5,678"
-                  change="+8.2%"
+                  value={isLoading ? "..." : metrics?.messagesToday.toString() || "0"}
+                  change="Real-time"
                   icon={MessageSquare}
                   trend="up"
                 />
                 <MetricCard
                   title="Active Conversations"
-                  value="234"
-                  change="+5.3%"
+                  value={isLoading ? "..." : metrics?.activeConversations.toString() || "0"}
+                  change="Last 24h"
                   icon={Activity}
                   trend="up"
                 />
                 <MetricCard
                   title="Images Generated"
-                  value="89"
-                  change="+15.7%"
+                  value={isLoading ? "..." : metrics?.imagesGenerated.toString() || "0"}
+                  change="All time"
                   icon={Sparkles}
                   trend="up"
                 />

@@ -1,0 +1,15 @@
+[Unit]
+Description=Telegram Member Sync Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/telethon-sync
+Environment="PATH=/usr/bin:/usr/local/bin"
+ExecStart=/usr/bin/python3 /root/telethon-sync/run_periodic.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

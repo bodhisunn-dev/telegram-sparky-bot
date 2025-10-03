@@ -36,40 +36,43 @@ serve(async (req) => {
 
     const chatId = recentMessage.chat_id;
 
-    // Generate a random fact using Lovable AI with diverse topics
+    // Generate a random fact using Lovable AI focused on crypto trends
     const topics = [
-      "cryptocurrency and blockchain technology",
-      "memecoins and their impact on crypto culture", 
-      "social media trends and viral content",
-      "artificial intelligence and machine learning",
-      "tech innovations and startups",
-      "Web3 and decentralized applications",
-      "NFTs and digital art",
-      "online communities and internet culture",
-      "DeFi and decentralized finance",
-      "crypto trading and market psychology",
-      "blockchain gaming and play-to-earn",
-      "metaverse and virtual worlds",
-      "crypto security and wallet safety",
-      "tokenomics and crypto economics",
-      "DAO governance and community voting",
-      "layer 2 solutions and scaling",
-      "cross-chain bridges and interoperability",
-      "crypto airdrops and token launches",
-      "influencer marketing in crypto",
-      "viral memes and internet phenomena",
-      "cryptocurrency regulations worldwide",
-      "blockchain use cases beyond finance"
+      "cryptocurrency market manipulation and pump-and-dump schemes",
+      "DeFi protocol hacks and rug pulls that cost millions", 
+      "Layer 1 blockchain wars and competition",
+      "Layer 2 scaling solutions and rollups",
+      "memecoin launches and moonshot stories",
+      "crypto scams and how to spot them",
+      "decentralized exchanges (DEX) vs centralized exchanges",
+      "liquidity pools and impermanent loss",
+      "tokenomics and supply/demand dynamics",
+      "smart contract vulnerabilities and exploits",
+      "NFT flipping and trading strategies",
+      "whale wallets and their market impact",
+      "crypto influencer pump schemes",
+      "decentralized autonomous organizations (DAOs)",
+      "cross-chain bridges and bridge hacks",
+      "stablecoin depegging events",
+      "crypto airdrops and farming strategies",
+      "meme coin culture and viral tokens",
+      "on-chain analytics and wallet tracking",
+      "MEV (Maximal Extractable Value) and sandwich attacks",
+      "crypto Twitter (CT) trends and alpha calls",
+      "presales, ICOs, and token generation events",
+      "crypto regulation news and government crackdowns",
+      "blockchain gaming and play-to-earn models",
+      "real-time crypto market trends and hot coins"
     ];
     
     const randomTopic = topics[Math.floor(Math.random() * topics.length)];
     
     const promptStyles = [
-      `Share a surprising and little-known fact about ${randomTopic}. Make it engaging and fun!`,
-      `Tell me something most people don't know about ${randomTopic}. Keep it interesting!`,
-      `What's a fascinating hidden detail about ${randomTopic} that would surprise crypto enthusiasts?`,
-      `Give me an exciting and unexpected fact about ${randomTopic}. Make it memorable!`,
-      `Share an insider secret or lesser-known truth about ${randomTopic}. Make it intriguing!`
+      `Share a shocking or little-known truth about ${randomTopic} that crypto degens need to know. Include specific examples or numbers if possible.`,
+      `What's a crazy fact about ${randomTopic} that most people in crypto don't know? Make it spicy and based on real events.`,
+      `Tell me something wild about ${randomTopic} that happened recently or is trending now in crypto. Be specific!`,
+      `Give me insider knowledge about ${randomTopic} that could help people avoid getting rekt. Include real examples.`,
+      `Share a mind-blowing detail about ${randomTopic} that's currently relevant in the crypto space. Make it memorable!`
     ];
     
     const randomPrompt = promptStyles[Math.floor(Math.random() * promptStyles.length)];
@@ -85,7 +88,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a fun and engaging bot that shares interesting facts. Keep facts concise (2-3 sentences), accurate, and entertaining. Add relevant emojis.'
+            content: 'You are a based crypto expert who shares real, valuable insights about cryptocurrency, DeFi, memecoins, scams, and market trends. Focus on practical, specific knowledge that helps people in crypto. Keep facts concise (2-3 sentences max), use crypto slang when appropriate, and always be accurate. Add relevant emojis. Reference real events and data when possible.'
           },
           {
             role: 'user',

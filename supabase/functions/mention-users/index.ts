@@ -72,31 +72,64 @@ Deno.serve(async (req) => {
 
     console.log(`Found ${allUsers.length} users with usernames in database`);
 
-    // Get users mentioned in the last hour to avoid duplicate mentions
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const { data: recentMentions } = await supabase
+    // Get ALL users mentioned (not just last hour) to track full cycle
+    const { data: allMentions } = await supabase
       .from('user_mentions')
-      .select('telegram_user_id')
-      .gte('mentioned_at', oneHourAgo);
+      .select('telegram_user_id, mentioned_at')
+      .order('mentioned_at', { ascending: false });
 
-    const recentlyMentionedIds = new Set(
-      recentMentions?.map(m => m.telegram_user_id) || []
+    // Create a map of user_id -> last mention time
+    const lastMentionMap = new Map<number, string>();
+    allMentions?.forEach(m => {
+      if (!lastMentionMap.has(m.telegram_user_id)) {
+        lastMentionMap.set(m.telegram_user_id, m.mentioned_at);
+      }
+    });
+
+    // Find users who have NEVER been mentioned OR were mentioned longest ago
+    const usersWithMentionTime = allUsers.map(u => ({
+      ...u,
+      lastMentioned: lastMentionMap.get(u.telegram_id) || '1970-01-01' // Never mentioned = oldest date
+    }));
+
+    // Sort by last mentioned time (oldest first, never mentioned = top priority)
+    usersWithMentionTime.sort((a, b) => 
+      new Date(a.lastMentioned).getTime() - new Date(b.lastMentioned).getTime()
     );
-    console.log(`${recentlyMentionedIds.size} users were mentioned in the last hour`);
 
-    // Filter out recently mentioned users to cycle through all users
-    const availableUsers = allUsers.filter(
+    // Also check who was mentioned in last hour to avoid very recent duplicates
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const recentlyMentionedIds = new Set(
+      allMentions?.filter(m => m.mentioned_at >= oneHourAgo).map(m => m.telegram_user_id) || []
+    );
+
+    // Filter out anyone mentioned in last hour
+    const availableUsers = usersWithMentionTime.filter(
       u => !recentlyMentionedIds.has(u.telegram_id)
     );
-    console.log(`${availableUsers.length} users available for mention (not mentioned in last hour)`);
 
-    // If we've cycled through everyone, reset and use all users
-    const usersToMentionFrom = availableUsers.length >= 5 ? availableUsers : allUsers;
+    console.log(`${availableUsers.length} users available for mention (excluding last hour)`);
+    console.log(`Total unique users ever mentioned: ${lastMentionMap.size} / ${allUsers.length}`);
 
-    // Randomly select 5-10 users to mention
-    const numberOfMentions = Math.floor(Math.random() * 6) + 5; // 5 to 10 users
-    const shuffled = usersToMentionFrom.sort(() => 0.5 - Math.random());
-    const selectedUsers = shuffled.slice(0, Math.min(numberOfMentions, usersToMentionFrom.length));
+    // If no users available (all mentioned in last hour), skip this cycle
+    if (availableUsers.length === 0) {
+      console.log('All users mentioned in last hour, skipping cycle');
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'All users recently mentioned, skipped',
+          cycle_progress: `${lastMentionMap.size}/${allUsers.length} users mentioned`
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Select 5-10 users from those available (prioritizing least recently mentioned)
+    const numberOfMentions = Math.min(
+      Math.floor(Math.random() * 6) + 5, // 5 to 10 users
+      availableUsers.length
+    );
+    const selectedUsers = availableUsers.slice(0, numberOfMentions);
 
     // Create mention message
     const mentions = selectedUsers.map(u => `@${u.username}`).join(' ');

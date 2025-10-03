@@ -12,8 +12,8 @@ This is a **FALSE POSITIVE**. The `pg_cron` extension is:
 ## Verification
 All cron jobs are functioning correctly and securely:
 - engage-users: Every 5 minutes
-- post-random-facts: Every 10 minutes (updated from 3 minutes)
-- mention-random-users: Every 5 minutes with hourly duplicate prevention
+- post-random-facts: Every 10 minutes (updated from 3 minutes) with duplicate prevention
+- mention-random-users: DISABLED (pending Telegram API credentials)
 
 ## Reference
 For more information: https://supabase.com/docs/guides/database/database-linter?lint=0014_extension_in_public

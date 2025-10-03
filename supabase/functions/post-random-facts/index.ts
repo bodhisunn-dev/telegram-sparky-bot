@@ -106,6 +106,26 @@ serve(async (req) => {
     const aiData = await aiResponse.json();
     const fact = aiData.choices[0].message.content;
 
+    // Check if this fact was posted recently (within last 7 days)
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: recentFacts } = await supabase
+      .from('posted_facts')
+      .select('fact_text')
+      .gte('posted_at', sevenDaysAgo);
+
+    // Check for similarity (simple substring check)
+    const isDuplicate = recentFacts?.some(rf => 
+      rf.fact_text.toLowerCase().includes(fact.toLowerCase().substring(0, 50)) ||
+      fact.toLowerCase().includes(rf.fact_text.toLowerCase().substring(0, 50))
+    );
+
+    if (isDuplicate) {
+      console.log('Fact too similar to recent post, skipping');
+      return new Response(JSON.stringify({ ok: true, message: 'Duplicate fact skipped' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     // Send the fact to Telegram
     const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
@@ -119,6 +139,14 @@ serve(async (req) => {
 
     const result = await response.json();
     console.log('Fact posted:', result);
+
+    // Store the posted fact
+    await supabase
+      .from('posted_facts')
+      .insert({
+        fact_text: fact,
+        chat_id: chatId
+      });
 
     return new Response(JSON.stringify({ ok: true, fact }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

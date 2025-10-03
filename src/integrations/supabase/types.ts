@@ -73,6 +73,27 @@ export type Database = {
           },
         ]
       }
+      posted_facts: {
+        Row: {
+          chat_id: number
+          fact_text: string
+          id: string
+          posted_at: string | null
+        }
+        Insert: {
+          chat_id: number
+          fact_text: string
+          id?: string
+          posted_at?: string | null
+        }
+        Update: {
+          chat_id?: number
+          fact_text?: string
+          id?: string
+          posted_at?: string | null
+        }
+        Relationships: []
+      }
       telegram_users: {
         Row: {
           created_at: string | null

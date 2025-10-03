@@ -218,6 +218,49 @@ serve(async (req) => {
       });
     }
 
+    // Handle image remix requests
+    if (messageText.startsWith('/remix')) {
+      const description = messageText.replace('/remix', '').trim();
+      
+      // Check if message has a photo
+      if (message.photo && message.photo.length > 0) {
+        const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
+        
+        // Get the largest photo
+        const photo = message.photo[message.photo.length - 1];
+        
+        // Get file path from Telegram
+        const fileResponse = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${photo.file_id}`);
+        const fileData = await fileResponse.json();
+        
+        if (fileData.ok) {
+          const filePath = fileData.result.file_path;
+          const fileUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
+          
+          await sendTelegramMessage(chatId, `🎨 Remixing your image with: "${description}"...`);
+          
+          // Call remix-image function
+          const { data: remixData, error: remixError } = await supabase.functions.invoke('remix-image', {
+            body: { imageUrl: fileUrl, description }
+          });
+
+          if (remixError) {
+            console.error('Image remix error:', remixError);
+            await sendTelegramMessage(chatId, 'Sorry, I had trouble remixing that image. Please try again!');
+          } else if (remixData?.image) {
+            // Send remixed image back to Telegram
+            await sendTelegramPhoto(chatId, remixData.image);
+          }
+        }
+      } else {
+        await sendTelegramMessage(chatId, '📸 Please upload an image with the /remix command!\n\nExample: Send a photo with caption "/remix make it cyberpunk style"');
+      }
+      
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     // Handle image generation requests
     if (configMap.image_gen_enabled && messageText.includes('/generate')) {
       const prompt = messageText.replace('/generate', '').trim();

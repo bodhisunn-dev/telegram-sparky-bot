@@ -109,6 +109,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_mentions: {
+        Row: {
+          chat_id: number
+          id: string
+          mentioned_at: string | null
+          telegram_user_id: number
+          username: string | null
+        }
+        Insert: {
+          chat_id: number
+          id?: string
+          mentioned_at?: string | null
+          telegram_user_id: number
+          username?: string | null
+        }
+        Update: {
+          chat_id?: number
+          id?: string
+          mentioned_at?: string | null
+          telegram_user_id?: number
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

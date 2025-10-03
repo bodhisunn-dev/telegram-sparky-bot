@@ -41,10 +41,31 @@ Deno.serve(async (req) => {
     const usersWithUsernames = allUsers.filter(u => u.username);
     console.log(`Found ${usersWithUsernames.length} users with usernames for mentions`);
 
+    // Get users mentioned in the last hour to avoid duplicate mentions
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { data: recentMentions } = await supabase
+      .from('user_mentions')
+      .select('telegram_user_id')
+      .gte('mentioned_at', oneHourAgo);
+
+    const recentlyMentionedIds = new Set(
+      recentMentions?.map(m => m.telegram_user_id) || []
+    );
+    console.log(`${recentlyMentionedIds.size} users were mentioned in the last hour`);
+
+    // Filter out recently mentioned users
+    const availableUsers = usersWithUsernames.filter(
+      u => !recentlyMentionedIds.has(u.telegram_id)
+    );
+    console.log(`${availableUsers.length} users available for mention`);
+
+    // If not enough users available, use all available users
+    const usersToMentionFrom = availableUsers.length >= 5 ? availableUsers : usersWithUsernames;
+
     // Randomly select 5-10 users to mention
     const numberOfMentions = Math.floor(Math.random() * 6) + 5; // 5 to 10 users
-    const shuffled = usersWithUsernames.sort(() => 0.5 - Math.random());
-    const selectedUsers = shuffled.slice(0, Math.min(numberOfMentions, usersWithUsernames.length));
+    const shuffled = usersToMentionFrom.sort(() => 0.5 - Math.random());
+    const selectedUsers = shuffled.slice(0, Math.min(numberOfMentions, usersToMentionFrom.length));
 
     // Get a recent chat_id to send the message to
     const { data: recentMessage, error: messageError } = await supabase
@@ -78,6 +99,23 @@ Deno.serve(async (req) => {
     const telegramResponse = await sendTelegramMessage(recentMessage.chat_id, messageText);
 
     console.log('Mention message sent:', telegramResponse);
+
+    // Record the mentions in the database
+    const mentionRecords = selectedUsers.map(u => ({
+      telegram_user_id: u.telegram_id,
+      username: u.username,
+      chat_id: recentMessage.chat_id,
+    }));
+
+    const { error: insertError } = await supabase
+      .from('user_mentions')
+      .insert(mentionRecords);
+
+    if (insertError) {
+      console.error('Error recording mentions:', insertError);
+    } else {
+      console.log('Successfully recorded', mentionRecords.length, 'mentions');
+    }
 
     return new Response(
       JSON.stringify({ 

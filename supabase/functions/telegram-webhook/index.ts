@@ -87,6 +87,80 @@ serve(async (req) => {
       return acc;
     }, {} as Record<string, any>) || {};
 
+    // Handle pinned messages command
+    if (messageText.startsWith('/pinned')) {
+      const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
+      
+      // Get chat info to see if it's a forum
+      const chatInfoResponse = await fetch(`https://api.telegram.org/bot${botToken}/getChat?chat_id=${chatId}`);
+      const chatInfo = await chatInfoResponse.json();
+      
+      let pinnedMessages = [];
+      
+      if (chatInfo.result?.is_forum) {
+        // For forum chats, we need to get pinned messages from the general topic
+        const response = await fetch(`https://api.telegram.org/bot${botToken}/getForumTopicIconStickers`);
+        await sendTelegramMessage(chatId, '📌 Pinned messages in forum chats require viewing each topic individually. Please check the pinned icon in each topic!');
+      } else {
+        // For regular groups, get pinned message
+        if (chatInfo.result?.pinned_message) {
+          const msg = chatInfo.result.pinned_message;
+          const text = msg.text || msg.caption || '(Media message)';
+          await sendTelegramMessage(chatId, `📌 *Pinned Message:*\n\n${text}`);
+        } else {
+          await sendTelegramMessage(chatId, '📌 No pinned messages found in this chat.');
+        }
+      }
+      
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Handle Twitter raid links command
+    if (messageText.startsWith('/x')) {
+      // Query recent messages from raidshark bot for raid links
+      const { data: raidMessages } = await supabase
+        .from('messages')
+        .select('message_text, created_at')
+        .eq('chat_id', chatId)
+        .ilike('message_text', '%twitter.com%')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (raidMessages && raidMessages.length > 0) {
+        let raidLinks = '🐦 *Active Twitter Raids* 🐦\n\n';
+        let linkCount = 0;
+        
+        for (const msg of raidMessages) {
+          // Extract Twitter/X links
+          const twitterRegex = /(https?:\/\/)?(www\.)?(twitter\.com|x\.com)\/[^\s]+/gi;
+          const matches = msg.message_text.match(twitterRegex);
+          
+          if (matches && linkCount < 10) {
+            for (const link of matches) {
+              if (linkCount < 10) {
+                raidLinks += `${linkCount + 1}. ${link}\n\n`;
+                linkCount++;
+              }
+            }
+          }
+        }
+        
+        if (linkCount > 0) {
+          await sendTelegramMessage(chatId, raidLinks);
+        } else {
+          await sendTelegramMessage(chatId, '🐦 No active Twitter raid links found. Start raiding! 🚀');
+        }
+      } else {
+        await sendTelegramMessage(chatId, '🐦 No Twitter raid links found yet. Let\'s get raiding! 🚀');
+      }
+      
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     // Handle top users command
     if (messageText.startsWith('/top')) {
       const { data: topUsers } = await supabase

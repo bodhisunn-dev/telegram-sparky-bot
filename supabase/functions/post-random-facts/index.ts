@@ -36,19 +36,43 @@ serve(async (req) => {
 
     const chatId = recentMessage.chat_id;
 
-    // Generate a random fact using Lovable AI
+    // Generate a random fact using Lovable AI with diverse topics
     const topics = [
       "cryptocurrency and blockchain technology",
-      "memecoins and their impact on crypto culture",
+      "memecoins and their impact on crypto culture", 
       "social media trends and viral content",
       "artificial intelligence and machine learning",
       "tech innovations and startups",
       "Web3 and decentralized applications",
       "NFTs and digital art",
-      "online communities and internet culture"
+      "online communities and internet culture",
+      "DeFi and decentralized finance",
+      "crypto trading and market psychology",
+      "blockchain gaming and play-to-earn",
+      "metaverse and virtual worlds",
+      "crypto security and wallet safety",
+      "tokenomics and crypto economics",
+      "DAO governance and community voting",
+      "layer 2 solutions and scaling",
+      "cross-chain bridges and interoperability",
+      "crypto airdrops and token launches",
+      "influencer marketing in crypto",
+      "viral memes and internet phenomena",
+      "cryptocurrency regulations worldwide",
+      "blockchain use cases beyond finance"
     ];
     
     const randomTopic = topics[Math.floor(Math.random() * topics.length)];
+    
+    const promptStyles = [
+      `Share a surprising and little-known fact about ${randomTopic}. Make it engaging and fun!`,
+      `Tell me something most people don't know about ${randomTopic}. Keep it interesting!`,
+      `What's a fascinating hidden detail about ${randomTopic} that would surprise crypto enthusiasts?`,
+      `Give me an exciting and unexpected fact about ${randomTopic}. Make it memorable!`,
+      `Share an insider secret or lesser-known truth about ${randomTopic}. Make it intriguing!`
+    ];
+    
+    const randomPrompt = promptStyles[Math.floor(Math.random() * promptStyles.length)];
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -65,7 +89,7 @@ serve(async (req) => {
           },
           {
             role: 'user',
-            content: `Share an interesting and little-known fact about ${randomTopic}. Make it engaging and fun!`
+            content: randomPrompt
           }
         ],
       }),

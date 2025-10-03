@@ -17,12 +17,10 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get ALL users from the database (not filtered by activity)
+    // Get ALL users from the database (including those with no recent activity)
     const { data: allUsers, error: usersError } = await supabase
       .from('telegram_users')
-      .select('username, telegram_id')
-      .not('username', 'is', null)
-      .order('created_at', { ascending: false });
+      .select('username, telegram_id, first_name');
 
     if (usersError) {
       console.error('Error fetching users:', usersError);
@@ -37,12 +35,16 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Found ${allUsers.length} total users`);
+    console.log(`Found ${allUsers.length} total users in database`);
 
-    // Randomly select 3-5 users to mention
-    const numberOfMentions = Math.floor(Math.random() * 3) + 3; // 3 to 5 users
-    const shuffled = allUsers.sort(() => 0.5 - Math.random());
-    const selectedUsers = shuffled.slice(0, numberOfMentions);
+    // Filter users who have usernames (for @mentions)
+    const usersWithUsernames = allUsers.filter(u => u.username);
+    console.log(`Found ${usersWithUsernames.length} users with usernames for mentions`);
+
+    // Randomly select 5-10 users to mention
+    const numberOfMentions = Math.floor(Math.random() * 6) + 5; // 5 to 10 users
+    const shuffled = usersWithUsernames.sort(() => 0.5 - Math.random());
+    const selectedUsers = shuffled.slice(0, Math.min(numberOfMentions, usersWithUsernames.length));
 
     // Get a recent chat_id to send the message to
     const { data: recentMessage, error: messageError } = await supabase

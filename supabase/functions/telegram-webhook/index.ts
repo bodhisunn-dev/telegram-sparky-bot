@@ -32,7 +32,7 @@ serve(async (req) => {
     const username = message.from.username || '';
     const firstName = message.from.first_name || '';
     const lastName = message.from.last_name || '';
-    const messageText = message.text || '';
+    const messageText = message.text || message.caption || '';
 
     // Upsert user
     const { data: userData, error: userError } = await supabase

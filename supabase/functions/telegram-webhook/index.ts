@@ -265,7 +265,16 @@ serve(async (req) => {
     if (configMap.image_gen_enabled && messageText.includes('/generate')) {
       const prompt = messageText.replace('/generate', '').trim();
       if (prompt) {
-        await sendTelegramMessage(chatId, `Generating image: "${prompt}"...`);
+        const statusMessage = `Generating image: "${prompt}"...`;
+        await sendTelegramMessage(chatId, statusMessage);
+        
+        // Store the "Generating image" status message for tracking
+        await supabase.from('messages').insert({
+          telegram_user_id: userData?.id,
+          chat_id: chatId,
+          message_text: statusMessage,
+          is_bot_message: true
+        });
         
         // Call image generation function
         const { data: imageData, error: imageError } = await supabase.functions.invoke('generate-image', {
@@ -278,6 +287,14 @@ serve(async (req) => {
         } else if (imageData?.image) {
           // Send image back to Telegram
           await sendTelegramPhoto(chatId, imageData.image);
+          
+          // Store success message
+          await supabase.from('messages').insert({
+            telegram_user_id: userData?.id,
+            chat_id: chatId,
+            message_text: '✅ Image generated successfully',
+            is_bot_message: true
+          });
         }
       }
       return new Response(JSON.stringify({ ok: true }), {

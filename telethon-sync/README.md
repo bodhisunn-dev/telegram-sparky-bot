@@ -23,10 +23,14 @@ nano .env  # or use your preferred editor
 Required variables:
 - `TELEGRAM_API_ID` - Already set (28077951)
 - `TELEGRAM_API_HASH` - Already set (17d0f93abcccfd735df0fe79258156e0)
-- `TELEGRAM_BOT_TOKEN` - Your bot token from @BotFather
-- `TELEGRAM_CHAT_ID` - Your chat ID (e.g., -1002342027931)
-- `SUPABASE_URL` - Your Supabase project URL
-- `SUPABASE_SERVICE_ROLE_KEY` - Your Supabase service role key (NOT the anon key)
+- `TELEGRAM_BOT_TOKEN` - Get from @BotFather on Telegram
+- `TELEGRAM_CHAT_ID` - Your supergroup chat ID (e.g., -1002342027931)
+  - Find this in your Supabase `messages` table - look at any `chat_id` value
+- `SUPABASE_URL` - Already set (https://eptbjrnqydvkkplousle.supabase.co)
+- `SUPABASE_SERVICE_ROLE_KEY` - **IMPORTANT**: Get from Lovable
+  - Click "View Backend" button in this chat
+  - Go to Settings → API
+  - Copy the `service_role` key (NOT the `anon` key!)
 
 ### 3. Run the Sync
 

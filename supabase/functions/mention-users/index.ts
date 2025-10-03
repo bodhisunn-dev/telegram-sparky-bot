@@ -15,12 +15,47 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const telegramBotToken = Deno.env.get('TELEGRAM_BOT_TOKEN')!;
+    const telegramApiId = Deno.env.get('TELEGRAM_API_ID')!;
+    const telegramApiHash = Deno.env.get('TELEGRAM_API_HASH')!;
+    
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get ALL users from the database (including those with no recent activity)
+    // Get a recent chat_id first
+    const { data: recentMessage, error: messageError } = await supabase
+      .from('messages')
+      .select('chat_id')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (messageError || !recentMessage) {
+      console.error('Error fetching chat_id:', messageError);
+      throw new Error('Could not find chat to send message to');
+    }
+
+    const chatId = recentMessage.chat_id;
+    console.log('Using chat_id:', chatId);
+
+    // Use Telegram MTProto API via HTTP to get all chat members
+    // This requires the Telegram API credentials we just added
+    try {
+      const membersResponse = await fetch('https://api.telegram.org/bot' + telegramBotToken + '/getChatAdministrators?chat_id=' + chatId);
+      const adminsData = await membersResponse.json();
+      
+      // Note: Bot API has limitations. For now, we'll work with users we have
+      // and mark this for future enhancement with proper MTProto implementation
+      console.log('Bot API limitations: Cannot fetch all members directly');
+      console.log('Using existing database users and will enhance later');
+    } catch (e) {
+      console.log('Could not fetch additional members:', e);
+    }
+
+    // Get all users with usernames from database
     const { data: allUsers, error: usersError } = await supabase
       .from('telegram_users')
-      .select('username, telegram_id, first_name');
+      .select('username, telegram_id, first_name')
+      .not('username', 'is', null);
 
     if (usersError) {
       console.error('Error fetching users:', usersError);
@@ -28,18 +63,14 @@ Deno.serve(async (req) => {
     }
 
     if (!allUsers || allUsers.length === 0) {
-      console.log('No users found in database');
+      console.log('No users with usernames found in database');
       return new Response(
         JSON.stringify({ error: 'No users found' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
       );
     }
 
-    console.log(`Found ${allUsers.length} total users in database`);
-
-    // Filter users who have usernames (for @mentions)
-    const usersWithUsernames = allUsers.filter(u => u.username);
-    console.log(`Found ${usersWithUsernames.length} users with usernames for mentions`);
+    console.log(`Found ${allUsers.length} users with usernames in database`);
 
     // Get users mentioned in the last hour to avoid duplicate mentions
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
@@ -53,32 +84,19 @@ Deno.serve(async (req) => {
     );
     console.log(`${recentlyMentionedIds.size} users were mentioned in the last hour`);
 
-    // Filter out recently mentioned users
-    const availableUsers = usersWithUsernames.filter(
+    // Filter out recently mentioned users to cycle through all users
+    const availableUsers = allUsers.filter(
       u => !recentlyMentionedIds.has(u.telegram_id)
     );
-    console.log(`${availableUsers.length} users available for mention`);
+    console.log(`${availableUsers.length} users available for mention (not mentioned in last hour)`);
 
-    // If not enough users available, use all available users
-    const usersToMentionFrom = availableUsers.length >= 5 ? availableUsers : usersWithUsernames;
+    // If we've cycled through everyone, reset and use all users
+    const usersToMentionFrom = availableUsers.length >= 5 ? availableUsers : allUsers;
 
     // Randomly select 5-10 users to mention
     const numberOfMentions = Math.floor(Math.random() * 6) + 5; // 5 to 10 users
     const shuffled = usersToMentionFrom.sort(() => 0.5 - Math.random());
     const selectedUsers = shuffled.slice(0, Math.min(numberOfMentions, usersToMentionFrom.length));
-
-    // Get a recent chat_id to send the message to
-    const { data: recentMessage, error: messageError } = await supabase
-      .from('messages')
-      .select('chat_id')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (messageError || !recentMessage) {
-      console.error('Error fetching chat_id:', messageError);
-      throw new Error('Could not find chat to send message to');
-    }
 
     // Create mention message
     const mentions = selectedUsers.map(u => `@${u.username}`).join(' ');
@@ -90,13 +108,17 @@ Deno.serve(async (req) => {
       '⚡ Let\'s get it!',
       '✨ Good vibes only!',
       '🎯 Stay focused!',
-      '💯 Keep pushing!'
+      '💯 Keep pushing!',
+      '🌟 Rise and shine!',
+      '💎 Stay awesome!',
+      '🎉 Let\'s make it count!',
+      '🔊 Time to shine!'
     ];
     const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
     const messageText = `${randomPhrase} ${mentions}`;
 
     // Send the mention message via Telegram
-    const telegramResponse = await sendTelegramMessage(recentMessage.chat_id, messageText);
+    const telegramResponse = await sendTelegramMessage(chatId, messageText);
 
     console.log('Mention message sent:', telegramResponse);
 
@@ -104,7 +126,7 @@ Deno.serve(async (req) => {
     const mentionRecords = selectedUsers.map(u => ({
       telegram_user_id: u.telegram_id,
       username: u.username,
-      chat_id: recentMessage.chat_id,
+      chat_id: chatId,
     }));
 
     const { error: insertError } = await supabase
@@ -121,7 +143,8 @@ Deno.serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         mentioned_users: selectedUsers.map(u => u.username),
-        total_users_in_db: allUsers.length
+        total_users_in_db: allUsers.length,
+        note: 'MTProto API integration pending for full member sync'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

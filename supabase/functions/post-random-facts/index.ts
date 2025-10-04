@@ -178,11 +178,11 @@ serve(async (req) => {
     const randomTopic = topics[Math.floor(Math.random() * topics.length)];
     
     const promptStyles = [
-      `${randomTopic}: Give me ONE shocking fact. Max 12 words.`,
-      `${randomTopic}: One sentence truth. 10 words max.`,
-      `${randomTopic}: Spicy take in 12 words or less.`,
-      `${randomTopic}: Wild fact. Maximum 10 words.`,
-      `${randomTopic}: Hot truth in one short sentence, 12 words max.`
+      `${randomTopic}: 5 words only.`,
+      `${randomTopic}: Ultra short. 6 words max.`,
+      `${randomTopic}: Shortest fact. 5 words.`,
+      `${randomTopic}: Mini truth. 7 words max.`,
+      `${randomTopic}: Tiny fact. 5-6 words only.`
     ];
     
     const randomPrompt = promptStyles[Math.floor(Math.random() * promptStyles.length)];
@@ -198,14 +198,14 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'Write ONE short crypto fact. Maximum 150 characters total including all emojis and spaces. ONE sentence only. No paragraphs. No explanations.'
+            content: 'Write ONLY 5-7 words. Nothing more. Ultra short crypto fact. Add 1 emoji max.'
           },
           {
             role: 'user',
             content: randomPrompt
           }
         ],
-        max_completion_tokens: 50,
+        max_completion_tokens: 20,
       }),
     });
 
@@ -220,12 +220,12 @@ serve(async (req) => {
     const aiData = await aiResponse.json();
     let fact = aiData.choices[0].message.content.trim();
     
-    // Hard limit: enforce max 250 chars for safety
-    if (fact.length > 250) {
-      fact = fact.substring(0, 247) + '...';
+    // Super strict limit: max 120 chars
+    if (fact.length > 120) {
+      fact = fact.substring(0, 117) + '...';
     }
     
-    console.log('Generated fact length:', fact.length, 'chars -', fact);
+    console.log('Fact length:', fact.length, '|', fact);
 
     // Check if this fact was posted recently (within last 7 days)
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();

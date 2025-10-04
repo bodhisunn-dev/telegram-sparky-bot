@@ -31,12 +31,6 @@ client = TelegramClient('bot_session', API_ID, API_HASH)
 
 async def fetch_all_members():
     """Fetch all members from the Telegram chat"""
-    print(f"🔄 Connecting to Telegram...")
-    
-    # Start the client with bot token
-    await client.start(bot_token=BOT_TOKEN)
-    print(f"✅ Connected to Telegram as bot")
-    
     print(f"📥 Fetching members from chat {CHAT_ID}...")
     
     # Get all participants
@@ -112,6 +106,11 @@ async def main():
     print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
     
     try:
+        # Connect to Telegram first
+        print(f"🔄 Connecting to Telegram...")
+        await client.start(bot_token=BOT_TOKEN)
+        print(f"✅ Connected to Telegram as bot")
+        
         # Get chat info
         await get_chat_info()
         

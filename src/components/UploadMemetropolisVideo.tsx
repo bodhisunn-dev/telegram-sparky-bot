@@ -1,39 +1,54 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Upload } from "lucide-react";
 
 export const UploadMemetropolisVideo = () => {
   const [uploading, setUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Check if file is too large (max 20MB for Telegram)
+      if (file.size > 20 * 1024 * 1024) {
+        toast({
+          title: "File Too Large",
+          description: "Video must be under 20MB for Telegram. Please compress it first.",
+          variant: "destructive",
+        });
+        return;
+      }
+      setSelectedFile(file);
+    }
+  };
+
   const handleUpload = async () => {
+    if (!selectedFile) {
+      toast({
+        title: "No File Selected",
+        description: "Please select a video file first",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setUploading(true);
     try {
-      // Fetch the video from public folder
-      const response = await fetch('/memetropolis-animation.mp4');
-      
-      if (!response.ok) {
-        throw new Error(`Failed to load video: ${response.statusText}`);
-      }
-      
-      const blob = await response.blob();
-      console.log('Video blob size:', blob.size, 'type:', blob.type);
-      
-      // Check if file is too large (max 20MB for Telegram)
-      if (blob.size > 20 * 1024 * 1024) {
-        throw new Error('Video file is too large (max 20MB). Please use a smaller file.');
-      }
+      console.log('Uploading file:', selectedFile.name, 'size:', selectedFile.size, 'type:', selectedFile.type);
       
       // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('bot-media')
-        .upload('memetropolis-animation.mp4', blob, {
+        .upload('memetropolis-animation.mp4', selectedFile, {
           cacheControl: '3600',
           upsert: true,
-          contentType: blob.type || 'video/mp4'
+          contentType: selectedFile.type || 'video/mp4'
         });
 
       if (uploadError) throw uploadError;
@@ -45,10 +60,12 @@ export const UploadMemetropolisVideo = () => {
 
       toast({
         title: "Video uploaded! ✅",
-        description: `File size: ${(blob.size / 1024 / 1024).toFixed(2)}MB`,
+        description: `${selectedFile.name} (${(selectedFile.size / 1024 / 1024).toFixed(2)}MB)`,
       });
       
       console.log('Video uploaded to:', publicUrl);
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (error: any) {
       toast({
         title: "Upload Failed",
@@ -69,11 +86,25 @@ export const UploadMemetropolisVideo = () => {
           Upload the Memetropolis animation to Supabase Storage for reliable access
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
+        <div>
+          <Input
+            ref={fileInputRef}
+            type="file"
+            accept="video/mp4,video/quicktime"
+            onChange={handleFileSelect}
+            disabled={uploading}
+          />
+          {selectedFile && (
+            <p className="text-sm text-muted-foreground mt-2">
+              Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)}MB)
+            </p>
+          )}
+        </div>
         <Button
           onClick={handleUpload}
-          disabled={uploading}
-          className="gap-2"
+          disabled={uploading || !selectedFile}
+          className="gap-2 w-full"
         >
           {uploading ? (
             <>

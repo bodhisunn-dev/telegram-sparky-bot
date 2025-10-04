@@ -178,11 +178,11 @@ serve(async (req) => {
     const randomTopic = topics[Math.floor(Math.random() * topics.length)];
     
     const promptStyles = [
-      `Share a shocking or little-known truth about ${randomTopic} that crypto degens need to know. Include specific examples or numbers if possible.`,
-      `What's a crazy fact about ${randomTopic} that most people in crypto don't know? Make it spicy and based on real events.`,
-      `Tell me something wild about ${randomTopic} that happened recently or is trending now in crypto. Be specific!`,
-      `Give me insider knowledge about ${randomTopic} that could help people avoid getting rekt. Include real examples.`,
-      `Share a mind-blowing detail about ${randomTopic} that's currently relevant in the crypto space. Make it memorable!`
+      `Share a spicy hot take about ${randomTopic} in 1 SHORT sentence. Max 150 characters. Be bold and degen.`,
+      `Drop a shocking fact about ${randomTopic} in under 150 chars. Make it hit hard.`,
+      `Give me the wildest truth about ${randomTopic}. One sentence only, under 150 chars. Be spicy.`,
+      `What's the most degen thing about ${randomTopic}? Keep it under 150 characters.`,
+      `Expose something crazy about ${randomTopic}. ONE short sentence, max 150 chars.`
     ];
     
     const randomPrompt = promptStyles[Math.floor(Math.random() * promptStyles.length)];
@@ -198,7 +198,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a based crypto expert who shares real, valuable insights about cryptocurrency, DeFi, memecoins, scams, and market trends. Focus on practical, specific knowledge that helps people in crypto. Keep facts concise (2-3 sentences max), use crypto slang when appropriate, and always be accurate. Add relevant emojis. Reference real events and data when possible.'
+            content: 'You are a degen crypto expert. Write ONE SHORT spicy sentence about crypto. Max 150 characters total. Use degen slang. Add 1-2 emojis MAX. Be bold, real, and hit different. No fluff.'
           },
           {
             role: 'user',
@@ -217,7 +217,12 @@ serve(async (req) => {
     }
 
     const aiData = await aiResponse.json();
-    const fact = aiData.choices[0].message.content;
+    let fact = aiData.choices[0].message.content;
+    
+    // Trim if too long (accounting for emojis which can be 2-4 bytes each)
+    if (fact.length > 150) {
+      fact = fact.substring(0, 147) + '...';
+    }
 
     // Check if this fact was posted recently (within last 7 days)
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -253,9 +258,18 @@ serve(async (req) => {
     const telegramResult = await telegramResponse.json();
     console.log('Telegram fact posted:', telegramResult);
 
-    // Post to Twitter/X
+    // Post to Twitter/X (keep under 280 chars)
     try {
-      const tweetText = `💡 Random Crypto Fact 💡\n\n${fact}`;
+      // Simple format for Twitter - just the fact with emojis
+      const tweetText = `🔥 ${fact}`;
+      
+      // Double check character count (emojis count as 2 chars on Twitter)
+      if (tweetText.length > 280) {
+        console.error('Tweet too long:', tweetText.length, 'chars');
+        throw new Error('Tweet exceeds 280 character limit');
+      }
+      
+      console.log('Posting tweet:', tweetText, '- Length:', tweetText.length);
       const twitterResult = await sendTweet(tweetText);
       console.log('Twitter fact posted:', twitterResult);
     } catch (twitterError) {

@@ -39,36 +39,23 @@ serve(async (req) => {
 
     console.log('Sending photo to chat:', CHAT_ID);
 
-    // Fetch image from Supabase Storage with cache busting
-    const IMAGE_URL = `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/bot-media/memetropolis-image.png?t=${Date.now()}`;
-    console.log('Fetching image from:', IMAGE_URL);
-    
-    const imageResponse = await fetch(IMAGE_URL, {
-      cache: 'no-store',
-      headers: {
-        'Cache-Control': 'no-cache'
-      }
-    });
-    
-    if (!imageResponse.ok) {
-      throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
-    }
-    
-    const imageBlob = await imageResponse.blob();
-    console.log('Image fetched, size:', imageBlob.size, 'bytes (', (imageBlob.size / 1024 / 1024).toFixed(2), 'MB)');
+    // Use image URL directly from Supabase Storage
+    const IMAGE_URL = `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/bot-media/memetropolis-image.png`;
+    console.log('Using image URL:', IMAGE_URL);
 
-    // Create FormData to send file
-    const formData = new FormData();
-    formData.append('chat_id', CHAT_ID.toString());
-    formData.append('photo', imageBlob, 'memetropolis.png');
-    formData.append('caption', randomMessage);
-
-    // Send photo to Telegram using multipart/form-data
+    // Send photo to Telegram using URL
     const telegramResponse = await fetch(
       `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`,
       {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chat_id: CHAT_ID,
+          photo: IMAGE_URL,
+          caption: randomMessage,
+        }),
       }
     );
 

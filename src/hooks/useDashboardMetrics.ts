@@ -25,18 +25,10 @@ export const useDashboardMetrics = () => {
         .select('*', { count: 'exact', head: true })
         .gte('last_active_at', yesterday.toISOString());
 
-      // Get images generated (bot messages containing "Generating image")
-      const { count: imagesGenerated } = await supabase
-        .from('messages')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_bot_message', true)
-        .ilike('message_text', '%Generating image%');
-
       return {
         totalUsers: totalUsers || 0,
         messagesToday: messagesToday || 0,
         activeConversations: activeConversations || 0,
-        imagesGenerated: imagesGenerated || 0,
       };
     },
     refetchInterval: 30000, // Refresh every 30 seconds

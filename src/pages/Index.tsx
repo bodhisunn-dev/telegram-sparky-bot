@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Activity, MessageSquare, Users, TrendingUp, Sparkles, Bot } from "lucide-react";
+import { Activity, MessageSquare, Users, TrendingUp, Bot } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Sidebar from "@/components/Sidebar";
@@ -42,7 +42,7 @@ const Index = () => {
 
             <TabsContent value="dashboard" className="space-y-6">
               {/* Metrics Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <MetricCard
                   title="Total Users"
                   value={isLoading ? "..." : metrics?.totalUsers.toString() || "0"}
@@ -62,13 +62,6 @@ const Index = () => {
                   value={isLoading ? "..." : metrics?.activeConversations.toString() || "0"}
                   change="Last 24h"
                   icon={Activity}
-                  trend="up"
-                />
-                <MetricCard
-                  title="Images Generated"
-                  value={isLoading ? "..." : metrics?.imagesGenerated.toString() || "0"}
-                  change="All time"
-                  icon={Sparkles}
                   trend="up"
                 />
               </div>

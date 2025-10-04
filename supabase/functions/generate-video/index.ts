@@ -26,30 +26,28 @@ serve(async (req) => {
     let output;
 
     if (type === 'text-to-video') {
-      // Text to video using ZeroScope
+      // Text to video using Minimax video-01
       output = await replicate.run(
-        "anotherjesse/zeroscope-v2-xl",
+        "minimax/video-01",
         {
           input: {
             prompt: prompt,
-            num_frames: 24,
-            num_inference_steps: 50,
           }
         }
       );
     } else if (type === 'image-to-video') {
-      // Image to video using Stable Video Diffusion
+      // Image to video using Luma Dream Machine
       output = await replicate.run(
-        "stability-ai/stable-video-diffusion",
+        "lucataco/animate-diff",
         {
           input: {
-            input_image: imageUrl,
-            cond_aug: 0.02,
-            decoding_t: 14,
-            video_length: "14_frames_with_svd",
-            sizing_strategy: "maintain_aspect_ratio",
-            motion_bucket_id: 127,
-            frames_per_second: 6,
+            path: imageUrl,
+            seed: 255224557,
+            steps: 25,
+            prompt: "high quality, best quality",
+            n_prompt: "worst quality, low quality",
+            motion_module: "mm_sd_v15_v2",
+            guidance_scale: 7.5,
           }
         }
       );

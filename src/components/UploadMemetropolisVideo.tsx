@@ -15,11 +15,11 @@ export const UploadMemetropolisVideo = () => {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Check if file is too large (max 20MB for Telegram)
-      if (file.size > 20 * 1024 * 1024) {
+      // Check if file is too large (max 10MB for images on Telegram)
+      if (file.size > 10 * 1024 * 1024) {
         toast({
           title: "File Too Large",
-          description: "Video must be under 20MB for Telegram. Please compress it first.",
+          description: "Image must be under 10MB for Telegram.",
           variant: "destructive",
         });
         return;
@@ -32,7 +32,7 @@ export const UploadMemetropolisVideo = () => {
     if (!selectedFile) {
       toast({
         title: "No File Selected",
-        description: "Please select a video file first",
+        description: "Please select an image file first",
         variant: "destructive",
       });
       return;
@@ -45,10 +45,10 @@ export const UploadMemetropolisVideo = () => {
       // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('bot-media')
-        .upload('memetropolis-animation.mp4', selectedFile, {
+        .upload('memetropolis-image.png', selectedFile, {
           cacheControl: '3600',
           upsert: true,
-          contentType: selectedFile.type || 'video/mp4'
+          contentType: selectedFile.type || 'image/png'
         });
 
       if (uploadError) throw uploadError;
@@ -56,20 +56,20 @@ export const UploadMemetropolisVideo = () => {
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('bot-media')
-        .getPublicUrl('memetropolis-animation.mp4');
+        .getPublicUrl('memetropolis-image.png');
 
       toast({
-        title: "Video uploaded! ✅",
+        title: "Image uploaded! ✅",
         description: `${selectedFile.name} (${(selectedFile.size / 1024 / 1024).toFixed(2)}MB)`,
       });
       
-      console.log('Video uploaded to:', publicUrl);
+      console.log('Image uploaded to:', publicUrl);
       setSelectedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (error: any) {
       toast({
         title: "Upload Failed",
-        description: error.message || "Failed to upload video",
+        description: error.message || "Failed to upload image",
         variant: "destructive",
       });
       console.error('Upload error:', error);
@@ -81,9 +81,9 @@ export const UploadMemetropolisVideo = () => {
   return (
     <Card className="border-border">
       <CardHeader>
-        <CardTitle>Upload Animation to Storage</CardTitle>
+        <CardTitle>Upload Image to Storage</CardTitle>
         <CardDescription>
-          Upload the Memetropolis animation to Supabase Storage for reliable access
+          Upload the Memetropolis promotional image to Supabase Storage
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -91,7 +91,7 @@ export const UploadMemetropolisVideo = () => {
           <Input
             ref={fileInputRef}
             type="file"
-            accept="video/mp4,video/quicktime"
+            accept="image/png,image/jpeg,image/jpg"
             onChange={handleFileSelect}
             disabled={uploading}
           />
@@ -114,7 +114,7 @@ export const UploadMemetropolisVideo = () => {
           ) : (
             <>
               <Upload className="w-4 h-4" />
-              Upload Video to Storage
+              Upload Image to Storage
             </>
           )}
         </Button>

@@ -37,35 +37,35 @@ serve(async (req) => {
     // Select random message
     const randomMessage = degenMessages[Math.floor(Math.random() * degenMessages.length)];
 
-    console.log('Sending animation to chat:', CHAT_ID);
+    console.log('Sending photo to chat:', CHAT_ID);
 
-    // Fetch video from Supabase Storage with cache busting
-    const VIDEO_URL = `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/bot-media/memetropolis-animation.mp4?t=${Date.now()}`;
-    console.log('Fetching video from:', VIDEO_URL);
+    // Fetch image from Supabase Storage with cache busting
+    const IMAGE_URL = `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/bot-media/memetropolis-image.png?t=${Date.now()}`;
+    console.log('Fetching image from:', IMAGE_URL);
     
-    const videoResponse = await fetch(VIDEO_URL, {
+    const imageResponse = await fetch(IMAGE_URL, {
       cache: 'no-store',
       headers: {
         'Cache-Control': 'no-cache'
       }
     });
     
-    if (!videoResponse.ok) {
-      throw new Error(`Failed to fetch video: ${videoResponse.statusText}`);
+    if (!imageResponse.ok) {
+      throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
     }
     
-    const videoBlob = await videoResponse.blob();
-    console.log('Video fetched, size:', videoBlob.size, 'bytes (', (videoBlob.size / 1024 / 1024).toFixed(2), 'MB)');
+    const imageBlob = await imageResponse.blob();
+    console.log('Image fetched, size:', imageBlob.size, 'bytes (', (imageBlob.size / 1024 / 1024).toFixed(2), 'MB)');
 
     // Create FormData to send file
     const formData = new FormData();
     formData.append('chat_id', CHAT_ID.toString());
-    formData.append('animation', videoBlob, 'animation.mp4');
+    formData.append('photo', imageBlob, 'memetropolis.png');
     formData.append('caption', randomMessage);
 
-    // Send animation to Telegram using multipart/form-data
+    // Send photo to Telegram using multipart/form-data
     const telegramResponse = await fetch(
-      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendAnimation`,
+      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`,
       {
         method: 'POST',
         body: formData,
@@ -76,9 +76,9 @@ serve(async (req) => {
     console.log('Telegram API response:', result);
 
     if (!result.ok) {
-      console.error('Failed to send animation:', result);
+      console.error('Failed to send photo:', result);
       return new Response(
-        JSON.stringify({ error: 'Failed to send animation', details: result }),
+        JSON.stringify({ error: 'Failed to send photo', details: result }),
         { 
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }

@@ -18,7 +18,7 @@ export const TestMemetropolisPost = () => {
       
       toast({
         title: "Test post sent! 🚀",
-        description: "Check your global Memetropolis chat for the message.",
+        description: "Check your Telegram chat for the video message.",
       });
       
       console.log('Test post response:', data);
@@ -37,7 +37,7 @@ export const TestMemetropolisPost = () => {
   return (
     <Card className="border-border">
       <CardHeader>
-        <CardTitle>Test Hourly Post</CardTitle>
+        <CardTitle>Test Hourly Telegram Post</CardTitle>
       </CardHeader>
       <CardContent>
         <Button
@@ -53,7 +53,7 @@ export const TestMemetropolisPost = () => {
           ) : (
             <>
               <Send className="w-4 h-4" />
-              Send Test Post Now
+              Send Test Post to Telegram
             </>
           )}
         </Button>

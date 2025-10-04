@@ -1,119 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createHmac } from "node:crypto";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-// Twitter OAuth 1.0a helper functions
-function generateOAuthSignature(
-  method: string,
-  url: string,
-  params: Record<string, string>,
-  consumerSecret: string,
-  tokenSecret: string
-): string {
-  const signatureBaseString = `${method}&${encodeURIComponent(
-    url
-  )}&${encodeURIComponent(
-    Object.entries(params)
-      .sort()
-      .map(([k, v]) => `${k}=${v}`)
-      .join("&")
-  )}`;
-  const signingKey = `${encodeURIComponent(
-    consumerSecret
-  )}&${encodeURIComponent(tokenSecret)}`;
-  const hmacSha1 = createHmac("sha1", signingKey);
-  const signature = hmacSha1.update(signatureBaseString).digest("base64");
-  return signature;
-}
-
-function generateOAuthHeader(
-  method: string, 
-  url: string,
-  consumerKey: string,
-  consumerSecret: string,
-  accessToken: string,
-  accessTokenSecret: string
-): string {
-  const oauthParams = {
-    oauth_consumer_key: consumerKey,
-    oauth_nonce: Math.random().toString(36).substring(2),
-    oauth_signature_method: "HMAC-SHA1",
-    oauth_timestamp: Math.floor(Date.now() / 1000).toString(),
-    oauth_token: accessToken,
-    oauth_version: "1.0",
-  };
-
-  const signature = generateOAuthSignature(
-    method,
-    url,
-    oauthParams,
-    consumerSecret,
-    accessTokenSecret
-  );
-
-  const signedOAuthParams = {
-    ...oauthParams,
-    oauth_signature: signature,
-  };
-
-  const entries = Object.entries(signedOAuthParams).sort((a, b) =>
-    a[0].localeCompare(b[0])
-  );
-
-  return (
-    "OAuth " +
-    entries
-      .map(([k, v]) => `${encodeURIComponent(k)}="${encodeURIComponent(v)}"`)
-      .join(", ")
-  );
-}
-
-async function sendTweet(tweetText: string): Promise<any> {
-  const CONSUMER_KEY = Deno.env.get("TWITTER_CONSUMER_KEY")?.trim();
-  const CONSUMER_SECRET = Deno.env.get("TWITTER_CONSUMER_SECRET")?.trim();
-  const ACCESS_TOKEN = Deno.env.get("TWITTER_ACCESS_TOKEN")?.trim();
-  const ACCESS_TOKEN_SECRET = Deno.env.get("TWITTER_ACCESS_TOKEN_SECRET")?.trim();
-
-  if (!CONSUMER_KEY || !CONSUMER_SECRET || !ACCESS_TOKEN || !ACCESS_TOKEN_SECRET) {
-    throw new Error("Missing Twitter credentials");
-  }
-
-  const url = "https://api.x.com/2/tweets";
-  const method = "POST";
-  
-  const oauthHeader = generateOAuthHeader(
-    method, 
-    url, 
-    CONSUMER_KEY, 
-    CONSUMER_SECRET, 
-    ACCESS_TOKEN, 
-    ACCESS_TOKEN_SECRET
-  );
-
-  const response = await fetch(url, {
-    method: method,
-    headers: {
-      Authorization: oauthHeader,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ text: tweetText }),
-  });
-
-  const responseText = await response.text();
-  console.log("Twitter API Response:", responseText);
-
-  if (!response.ok) {
-    throw new Error(
-      `Twitter API error! status: ${response.status}, body: ${responseText}`
-    );
-  }
-
-  return JSON.parse(responseText);
-}
 
 const degenMessages = [
   "🚀 GM DEGENS! Memetropolis.ai is the ONLY Omnichain OFT Launchpad! 6 CHAINS united 💎\n\nFollow: https://x.com/memetropolis_ai\n\n#Memetropolis #Omnichain",
@@ -135,16 +26,57 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Starting hourly Memetropolis post to Twitter...');
+    console.log('Starting hourly Memetropolis post to Telegram...');
+
+    const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!botToken || !supabaseUrl || !supabaseKey) {
+      throw new Error('Missing required environment variables');
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Get chat_id from messages table
+    const { data: messageData, error: messageError } = await supabase
+      .from('messages')
+      .select('chat_id')
+      .limit(1)
+      .single();
+
+    if (messageError || !messageData) {
+      throw new Error('Could not find chat_id');
+    }
+
+    const chatId = messageData.chat_id;
 
     // Select random message
     const randomMessage = degenMessages[Math.floor(Math.random() * degenMessages.length)];
     
-    console.log('Posting to Twitter:', randomMessage);
-    const result = await sendTweet(randomMessage);
-    console.log('Twitter post successful:', result.data?.id);
+    // Read the video file
+    const videoPath = new URL('./memetropolis-animation.mp4', import.meta.url).pathname;
+    const videoFile = await Deno.readFile(videoPath);
 
-    return new Response(JSON.stringify({ ok: true, message: randomMessage, tweet_id: result.data?.id }), {
+    // Send video with caption to Telegram
+    const formData = new FormData();
+    formData.append('chat_id', chatId.toString());
+    formData.append('video', new Blob([videoFile], { type: 'video/mp4' }), 'memetropolis-animation.mp4');
+    formData.append('caption', randomMessage);
+
+    const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendVideo`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    const telegramResult = await telegramResponse.json();
+    console.log('Telegram API response:', telegramResult);
+
+    if (!telegramResult.ok) {
+      throw new Error(`Telegram API error: ${telegramResult.description}`);
+    }
+
+    return new Response(JSON.stringify({ ok: true, message: randomMessage }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 

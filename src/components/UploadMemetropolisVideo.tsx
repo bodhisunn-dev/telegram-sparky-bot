@@ -101,23 +101,53 @@ export const UploadMemetropolisVideo = () => {
             </p>
           )}
         </div>
-        <Button
-          onClick={handleUpload}
-          disabled={uploading || !selectedFile}
-          className="gap-2 w-full"
-        >
-          {uploading ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Uploading...
-            </>
-          ) : (
-            <>
-              <Upload className="w-4 h-4" />
-              Upload Image to Storage
-            </>
-          )}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={async () => {
+              setUploading(true);
+              try {
+                const response = await fetch('/memetropolis-image.png');
+                const blob = await response.blob();
+                const { error } = await supabase.storage
+                  .from('bot-media')
+                  .upload('memetropolis-image.png', blob, {
+                    cacheControl: '3600',
+                    upsert: true,
+                    contentType: 'image/png'
+                  });
+                if (error) throw error;
+                toast({ title: "Default image uploaded! ✅" });
+              } catch (error: any) {
+                toast({ title: "Upload Failed", description: error.message, variant: "destructive" });
+              } finally {
+                setUploading(false);
+              }
+            }}
+            disabled={uploading}
+            variant="outline"
+            className="gap-2 flex-1"
+          >
+            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+            Upload Default
+          </Button>
+          <Button
+            onClick={handleUpload}
+            disabled={uploading || !selectedFile}
+            className="gap-2 flex-1"
+          >
+            {uploading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Uploading...
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4" />
+                Upload Selected
+              </>
+            )}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

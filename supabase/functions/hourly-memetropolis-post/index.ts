@@ -40,7 +40,7 @@ serve(async (req) => {
     console.log('Sending animation to chat:', CHAT_ID);
 
     // Read the video file from the edge function folder
-    const videoPath = new URL('./memetropolis-animation.mp4', import.meta.url).pathname;
+    const videoPath = new URL('./animation.mp4', import.meta.url).pathname;
     const videoFile = await Deno.readFile(videoPath);
     
     // Create form data with the video file

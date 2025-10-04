@@ -116,12 +116,13 @@ async function sendTweet(tweetText: string): Promise<any> {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('Posting daily GM to Twitter...');
+    console.log('Starting daily GM post to Twitter...');
 
     const gmMessages = [
       "GM Degens, hope you make it out the trenches today 💪",

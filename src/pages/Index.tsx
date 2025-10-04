@@ -10,6 +10,7 @@ import RecentMessages from "@/components/RecentMessages";
 import BotConfig from "@/components/BotConfig";
 import { Auth } from "@/components/Auth";
 import { AdminManagement } from "@/components/AdminManagement";
+import { TestMemetropolisPost } from "@/components/TestMemetropolisPost";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -224,7 +225,10 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="config">
-              <BotConfig />
+              <div className="space-y-6">
+                <TestMemetropolisPost />
+                <BotConfig />
+              </div>
             </TabsContent>
 
             <TabsContent value="admins">

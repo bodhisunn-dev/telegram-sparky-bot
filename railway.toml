@@ -1,6 +1,2 @@
-# Railway deployment configuration
 [build]
 builder = "NIXPACKS"
-
-[deploy]
-startCommand = "cd telethon-sync && pip install -r requirements.txt && python run_periodic.py"

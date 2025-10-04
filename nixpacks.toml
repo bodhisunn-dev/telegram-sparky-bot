@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = ['python39', 'pip']
+
+[phases.install]
+cmds = ['cd telethon-sync && pip install -r requirements.txt']
+
+[start]
+cmd = 'cd telethon-sync && python run_periodic.py'

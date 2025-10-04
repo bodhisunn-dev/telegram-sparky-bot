@@ -1,3 +1,4 @@
+# Railway deployment configuration
 [build]
 builder = "NIXPACKS"
 

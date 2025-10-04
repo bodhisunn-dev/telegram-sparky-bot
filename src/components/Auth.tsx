@@ -10,6 +10,7 @@ export const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isResetMode, setIsResetMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -18,7 +19,19 @@ export const Auth = () => {
     setLoading(true);
 
     try {
-      if (isSignUp) {
+      if (isResetMode) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/`,
+        });
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Check your email",
+          description: "We sent you a password reset link.",
+        });
+        setIsResetMode(false);
+      } else if (isSignUp) {
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -67,7 +80,7 @@ export const Auth = () => {
               Dashboard Access
             </CardTitle>
             <CardDescription className="text-base mt-2">
-              Sign in to manage your Telegram AI Bot
+              {isResetMode ? "Reset your password" : "Sign in to manage your Telegram AI Bot"}
             </CardDescription>
           </div>
         </CardHeader>
@@ -91,36 +104,52 @@ export const Auth = () => {
               </div>
             </div>
             
-            <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium">
-                Password
-              </label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-            </div>
+            {!isResetMode && (
+              <div className="space-y-2">
+                <label htmlFor="password" className="text-sm font-medium">
+                  Password
+                </label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                />
+              </div>
+            )}
 
             <Button
               type="submit"
               className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
               disabled={loading}
             >
-              {loading ? "Loading..." : isSignUp ? "Sign Up" : "Sign In"}
+              {loading ? "Loading..." : isResetMode ? "Send Reset Link" : isSignUp ? "Sign Up" : "Sign In"}
             </Button>
+
+            {!isResetMode && (
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={() => setIsSignUp(!isSignUp)}
+              >
+                {isSignUp ? "Already have an account? Sign In" : "Need an account? Sign Up"}
+              </Button>
+            )}
 
             <Button
               type="button"
-              variant="ghost"
-              className="w-full"
-              onClick={() => setIsSignUp(!isSignUp)}
+              variant="link"
+              className="w-full text-sm"
+              onClick={() => {
+                setIsResetMode(!isResetMode);
+                setIsSignUp(false);
+              }}
             >
-              {isSignUp ? "Already have an account? Sign In" : "Need an account? Sign Up"}
+              {isResetMode ? "Back to Sign In" : "Forgot password?"}
             </Button>
           </form>
         </CardContent>

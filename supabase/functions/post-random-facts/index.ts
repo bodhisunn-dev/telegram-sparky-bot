@@ -178,11 +178,11 @@ serve(async (req) => {
     const randomTopic = topics[Math.floor(Math.random() * topics.length)];
     
     const promptStyles = [
-      `${randomTopic}: 5 words only.`,
-      `${randomTopic}: Ultra short. 6 words max.`,
-      `${randomTopic}: Shortest fact. 5 words.`,
-      `${randomTopic}: Mini truth. 7 words max.`,
-      `${randomTopic}: Tiny fact. 5-6 words only.`
+      `Write a short spicy fact about ${randomTopic}. 2 sentences max. Around 150 chars. Be engaging and use crypto slang.`,
+      `Give me a cool truth about ${randomTopic}. Keep it to 2 sentences, roughly 150 characters. Make it memorable.`,
+      `Share an interesting fact about ${randomTopic}. 2 short sentences, about 150 chars total. Add personality.`,
+      `Tell me something wild about ${randomTopic}. Max 2 sentences, around 150 characters. Keep it spicy.`,
+      `Drop knowledge about ${randomTopic}. 2 sentences or less, approximately 150 chars. Be bold.`
     ];
     
     const randomPrompt = promptStyles[Math.floor(Math.random() * promptStyles.length)];
@@ -198,14 +198,14 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'Write ONLY 5-7 words. Nothing more. Ultra short crypto fact. Add 1 emoji max.'
+            content: 'Write engaging crypto facts in 2 short sentences. Target 150 characters total. Use crypto slang and add 1-2 emojis. Be informative but fun.'
           },
           {
             role: 'user',
             content: randomPrompt
           }
         ],
-        max_completion_tokens: 20,
+        max_completion_tokens: 80,
       }),
     });
 
@@ -220,9 +220,9 @@ serve(async (req) => {
     const aiData = await aiResponse.json();
     let fact = aiData.choices[0].message.content.trim();
     
-    // Super strict limit: max 120 chars
-    if (fact.length > 120) {
-      fact = fact.substring(0, 117) + '...';
+    // Enforce 200 char max (leaves room for header on Twitter)
+    if (fact.length > 200) {
+      fact = fact.substring(0, 197) + '...';
     }
     
     console.log('Fact length:', fact.length, '|', fact);
@@ -247,8 +247,8 @@ serve(async (req) => {
       });
     }
 
-    // Send the fact to Telegram with simple format
-    const telegramText = `🔥 Crypto Truth: ${fact}`;
+    // Send the fact to Telegram
+    const telegramText = `💡 Did You Know 💡\n\n${fact}`;
     const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -261,26 +261,25 @@ serve(async (req) => {
     const telegramResult = await telegramResponse.json();
     console.log('Telegram posted:', telegramResult.ok);
 
-    // Post to Twitter/X (strict 280 char limit)
+    // Post to Twitter/X 
     try {
-      const tweetText = `🔥 ${fact}`;
+      const tweetText = `💡 Did You Know 💡\n\n${fact}`;
       
       if (tweetText.length > 280) {
-        // Emergency trim
-        const maxFactLength = 276; // 280 - "🔥 " - safety margin
+        // Trim fact to fit
+        const maxFactLength = 280 - 22; // "💡 Did You Know 💡\n\n" = 22 chars
         const trimmedFact = fact.substring(0, maxFactLength - 3) + '...';
-        const finalTweet = `🔥 ${trimmedFact}`;
-        console.log('Tweet trimmed from', tweetText.length, 'to', finalTweet.length);
+        const finalTweet = `💡 Did You Know 💡\n\n${trimmedFact}`;
+        console.log('Tweet trimmed:', finalTweet.length, 'chars');
         const result = await sendTweet(finalTweet);
-        console.log('Twitter success (trimmed):', result);
+        console.log('Twitter success (trimmed)');
       } else {
         console.log('Posting to Twitter:', tweetText.length, 'chars');
         const result = await sendTweet(tweetText);
-        console.log('Twitter success:', result);
+        console.log('Twitter success');
       }
     } catch (twitterError: any) {
-      console.error('Twitter API error:', twitterError.message || twitterError);
-      // Don't throw - continue with Telegram
+      console.error('Twitter error:', twitterError.message || twitterError);
     }
 
     // Store the posted fact

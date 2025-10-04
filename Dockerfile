@@ -9,5 +9,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY telethon-sync/ ./
 
-# Run the periodic sync
-CMD ["python3", "run_periodic.py"]
+# Run the periodic sync with unbuffered output for Railway logs
+CMD ["python3", "-u", "run_periodic.py"]

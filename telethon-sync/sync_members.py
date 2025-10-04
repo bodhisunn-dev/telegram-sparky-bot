@@ -25,9 +25,6 @@ CHAT_ID = int(os.getenv('TELEGRAM_CHAT_ID'))
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
 
-# Initialize Supabase client
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
 # Initialize Telethon client
 client = TelegramClient('bot_session', API_ID, API_HASH)
 
@@ -65,6 +62,9 @@ async def fetch_all_members():
 async def sync_to_supabase(members):
     """Sync members to Supabase database"""
     print(f"\n💾 Syncing {len(members)} members to Supabase...")
+    
+    # Initialize Supabase client here to avoid import-time errors
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
     
     # Batch upsert in chunks of 100
     batch_size = 100

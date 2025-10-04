@@ -39,17 +39,23 @@ serve(async (req) => {
 
     console.log('Sending animation to chat:', CHAT_ID);
 
-    // Fetch video from Supabase Storage
-    const VIDEO_URL = `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/bot-media/memetropolis-animation.mp4`;
+    // Fetch video from Supabase Storage with cache busting
+    const VIDEO_URL = `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/bot-media/memetropolis-animation.mp4?t=${Date.now()}`;
     console.log('Fetching video from:', VIDEO_URL);
     
-    const videoResponse = await fetch(VIDEO_URL);
+    const videoResponse = await fetch(VIDEO_URL, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
+    });
+    
     if (!videoResponse.ok) {
       throw new Error(`Failed to fetch video: ${videoResponse.statusText}`);
     }
     
     const videoBlob = await videoResponse.blob();
-    console.log('Video fetched, size:', videoBlob.size);
+    console.log('Video fetched, size:', videoBlob.size, 'bytes (', (videoBlob.size / 1024 / 1024).toFixed(2), 'MB)');
 
     // Create FormData to send file
     const formData = new FormData();

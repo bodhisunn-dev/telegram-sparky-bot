@@ -14,3 +14,12 @@ verify_jwt = false
 
 [functions.mention-users]
 verify_jwt = false
+
+[functions.post-random-facts]
+verify_jwt = false
+
+[functions.hourly-memetropolis-post]
+verify_jwt = false
+
+[functions.engage-users]
+verify_jwt = false

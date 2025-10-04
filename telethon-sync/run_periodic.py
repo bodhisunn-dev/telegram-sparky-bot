@@ -2,6 +2,7 @@
 """
 Periodic Member Sync Script
 Runs the member sync every N hours continuously
+For Railway deployment
 """
 
 import asyncio

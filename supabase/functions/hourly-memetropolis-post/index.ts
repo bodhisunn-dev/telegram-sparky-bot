@@ -39,25 +39,30 @@ serve(async (req) => {
 
     console.log('Sending animation to chat:', CHAT_ID);
 
-    // Use video from Supabase Storage
+    // Fetch video from Supabase Storage
     const VIDEO_URL = `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/bot-media/memetropolis-animation.mp4`;
+    console.log('Fetching video from:', VIDEO_URL);
     
-    console.log('Using video URL:', VIDEO_URL);
+    const videoResponse = await fetch(VIDEO_URL);
+    if (!videoResponse.ok) {
+      throw new Error(`Failed to fetch video: ${videoResponse.statusText}`);
+    }
+    
+    const videoBlob = await videoResponse.blob();
+    console.log('Video fetched, size:', videoBlob.size);
 
-    // Send animation to Telegram
+    // Create FormData to send file
+    const formData = new FormData();
+    formData.append('chat_id', CHAT_ID.toString());
+    formData.append('animation', videoBlob, 'animation.mp4');
+    formData.append('caption', randomMessage);
+
+    // Send animation to Telegram using multipart/form-data
     const telegramResponse = await fetch(
       `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendAnimation`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          chat_id: CHAT_ID,
-          animation: VIDEO_URL,
-          caption: randomMessage,
-          parse_mode: 'HTML',
-        }),
+        body: formData,
       }
     );
 

@@ -18,6 +18,9 @@ verify_jwt = false
 [functions.post-random-facts]
 verify_jwt = false
 
+[functions.post-daily-gm]
+verify_jwt = false
+
 [functions.hourly-memetropolis-post]
 verify_jwt = false
 

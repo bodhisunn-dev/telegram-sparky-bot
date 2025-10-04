@@ -247,7 +247,7 @@ serve(async (req) => {
       });
     }
 
-    // Send the fact to Telegram
+    // Send the fact to Telegram only (removed Twitter posting)
     const telegramText = `💡 Did You Know 💡\n\n${fact}`;
     const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
@@ -260,27 +260,6 @@ serve(async (req) => {
 
     const telegramResult = await telegramResponse.json();
     console.log('Telegram posted:', telegramResult.ok);
-
-    // Post to Twitter/X 
-    try {
-      const tweetText = `💡 Did You Know 💡\n\n${fact}`;
-      
-      if (tweetText.length > 280) {
-        // Trim fact to fit
-        const maxFactLength = 280 - 22; // "💡 Did You Know 💡\n\n" = 22 chars
-        const trimmedFact = fact.substring(0, maxFactLength - 3) + '...';
-        const finalTweet = `💡 Did You Know 💡\n\n${trimmedFact}`;
-        console.log('Tweet trimmed:', finalTweet.length, 'chars');
-        const result = await sendTweet(finalTweet);
-        console.log('Twitter success (trimmed)');
-      } else {
-        console.log('Posting to Twitter:', tweetText.length, 'chars');
-        const result = await sendTweet(tweetText);
-        console.log('Twitter success');
-      }
-    } catch (twitterError: any) {
-      console.error('Twitter error:', twitterError.message || twitterError);
-    }
 
     // Store the posted fact
     await supabase

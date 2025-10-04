@@ -13,6 +13,7 @@ import { AdminManagement } from "@/components/AdminManagement";
 import { TestMemetropolisPost } from "@/components/TestMemetropolisPost";
 import { UploadMemetropolisVideo } from "@/components/UploadMemetropolisVideo";
 import { TestRandomFactPost } from "@/components/TestRandomFactPost";
+import { TestDailyGM } from "@/components/TestDailyGM";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -231,6 +232,7 @@ const Index = () => {
                 <UploadMemetropolisVideo />
                 <TestMemetropolisPost />
                 <TestRandomFactPost />
+                <TestDailyGM />
                 <BotConfig />
               </div>
             </TabsContent>

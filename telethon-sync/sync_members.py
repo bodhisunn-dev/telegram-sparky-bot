@@ -101,7 +101,7 @@ async def get_chat_info():
 async def main():
     """Main function"""
     print("=" * 60)
-    print("🤖 TELEGRAM MEMBER SYNC SCRIPT")
+    print("🤖 TELEGRAM MEMBER SYNC SCRIPT v2.0 [FIXED CONNECTION ORDER]")
     print("=" * 60)
     print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
     

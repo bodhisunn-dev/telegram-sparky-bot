@@ -37,25 +37,25 @@ serve(async (req) => {
     // Select random message
     const randomMessage = degenMessages[Math.floor(Math.random() * degenMessages.length)];
 
-    // Get the video URL (using the deployed app URL)
-    const videoUrl = `${Deno.env.get('SUPABASE_URL')?.replace('supabase.co', 'lovable.app') || ''}/memetropolis-animation.mp4`;
-    
     console.log('Sending animation to chat:', CHAT_ID);
+
+    // Read the video file from the edge function folder
+    const videoPath = new URL('./memetropolis-animation.mp4', import.meta.url).pathname;
+    const videoFile = await Deno.readFile(videoPath);
+    
+    // Create form data with the video file
+    const formData = new FormData();
+    formData.append('chat_id', CHAT_ID.toString());
+    formData.append('caption', randomMessage);
+    formData.append('parse_mode', 'HTML');
+    formData.append('animation', new Blob([videoFile], { type: 'video/mp4' }), 'memetropolis.mp4');
 
     // Send animation to Telegram
     const telegramResponse = await fetch(
       `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendAnimation`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          chat_id: CHAT_ID,
-          animation: videoUrl,
-          caption: randomMessage,
-          parse_mode: 'HTML',
-        }),
+        body: formData,
       }
     );
 
@@ -63,32 +63,13 @@ serve(async (req) => {
     console.log('Telegram API response:', result);
 
     if (!result.ok) {
-      // If URL doesn't work, try sending as file upload
-      console.log('Trying file upload method...');
-      const formData = new FormData();
-      formData.append('chat_id', CHAT_ID.toString());
-      formData.append('caption', randomMessage);
-      formData.append('parse_mode', 'HTML');
-      
-      // Fetch the video file
-      const videoFile = await fetch(videoUrl);
-      const videoBlob = await videoFile.blob();
-      formData.append('animation', videoBlob, 'animation.mp4');
-      
-      const retryResponse = await fetch(
-        `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendAnimation`,
-        {
-          method: 'POST',
-          body: formData,
-        }
-      );
-      
-      const retryResult = await retryResponse.json();
-      console.log('Retry response:', retryResult);
-      
+      console.error('Failed to send animation:', result);
       return new Response(
-        JSON.stringify({ success: true, result: retryResult }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Failed to send animation', details: result }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
       );
     }
 

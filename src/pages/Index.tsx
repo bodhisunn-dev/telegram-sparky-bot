@@ -1,17 +1,62 @@
-import { useState } from "react";
-import { Activity, MessageSquare, Users, TrendingUp, Bot, Sparkles } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Activity, MessageSquare, Users, TrendingUp, Bot, Sparkles, LogOut } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import Sidebar from "@/components/Sidebar";
 import MetricCard from "@/components/MetricCard";
 import UserLeaderboard from "@/components/UserLeaderboard";
 import RecentMessages from "@/components/RecentMessages";
 import BotConfig from "@/components/BotConfig";
+import { Auth } from "@/components/Auth";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [session, setSession] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const { data: metrics, isLoading } = useDashboardMetrics();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    toast({
+      title: "Signed out",
+      description: "You have been signed out successfully.",
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <Bot className="w-16 h-16 mx-auto text-primary animate-pulse" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <Auth />;
+  }
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -21,15 +66,28 @@ const Index = () => {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-accent">
-                <Bot className="w-8 h-8 text-primary-foreground" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-accent">
+                  <Bot className="w-8 h-8 text-primary-foreground" />
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                    Telegram AI Bot Dashboard
+                  </h1>
+                  <p className="text-muted-foreground">Monitor and control your AI-powered Telegram bot</p>
+                </div>
               </div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Telegram AI Bot Dashboard
-              </h1>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSignOut}
+                className="gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                Sign Out
+              </Button>
             </div>
-            <p className="text-muted-foreground">Monitor and control your AI-powered Telegram bot</p>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

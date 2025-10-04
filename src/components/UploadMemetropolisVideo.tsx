@@ -14,7 +14,18 @@ export const UploadMemetropolisVideo = () => {
     try {
       // Fetch the video from public folder
       const response = await fetch('/memetropolis-animation.mp4');
+      
+      if (!response.ok) {
+        throw new Error(`Failed to load video: ${response.statusText}`);
+      }
+      
       const blob = await response.blob();
+      console.log('Video blob size:', blob.size, 'type:', blob.type);
+      
+      // Check if file is too large (max 20MB for Telegram)
+      if (blob.size > 20 * 1024 * 1024) {
+        throw new Error('Video file is too large (max 20MB). Please use a smaller file.');
+      }
       
       // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
@@ -22,7 +33,7 @@ export const UploadMemetropolisVideo = () => {
         .upload('memetropolis-animation.mp4', blob, {
           cacheControl: '3600',
           upsert: true,
-          contentType: 'video/mp4'
+          contentType: blob.type || 'video/mp4'
         });
 
       if (uploadError) throw uploadError;
@@ -34,13 +45,13 @@ export const UploadMemetropolisVideo = () => {
 
       toast({
         title: "Video uploaded! ✅",
-        description: `URL: ${publicUrl}`,
+        description: `File size: ${(blob.size / 1024 / 1024).toFixed(2)}MB`,
       });
       
       console.log('Video uploaded to:', publicUrl);
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "Upload Failed",
         description: error.message || "Failed to upload video",
         variant: "destructive",
       });

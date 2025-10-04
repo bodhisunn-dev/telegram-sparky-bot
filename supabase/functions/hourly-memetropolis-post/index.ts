@@ -39,23 +39,24 @@ serve(async (req) => {
 
     console.log('Sending animation to chat:', CHAT_ID);
 
-    // Read the video file from the edge function folder
-    const videoPath = new URL('./animation.mp4', import.meta.url).pathname;
-    const videoFile = await Deno.readFile(videoPath);
-    
-    // Create form data with the video file
-    const formData = new FormData();
-    formData.append('chat_id', CHAT_ID.toString());
-    formData.append('caption', randomMessage);
-    formData.append('parse_mode', 'HTML');
-    formData.append('animation', new Blob([videoFile], { type: 'video/mp4' }), 'memetropolis.mp4');
+    // Reuse Telegram file_id from a previous successful upload
+    // This video was uploaded successfully before with file_id
+    const VIDEO_FILE_ID = 'BAACAgEAAyEGAASwUjRsAAIFAmjgj00fAj760A-9IIPI-9UyzJXwAAKuBgACUDgJR0vwxE2rBXH_NgQ';
 
-    // Send animation to Telegram
+    // Send animation to Telegram using file_id
     const telegramResponse = await fetch(
       `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendAnimation`,
       {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chat_id: CHAT_ID,
+          animation: VIDEO_FILE_ID,
+          caption: randomMessage,
+          parse_mode: 'HTML',
+        }),
       }
     );
 

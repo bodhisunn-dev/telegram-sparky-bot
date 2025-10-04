@@ -178,11 +178,11 @@ serve(async (req) => {
     const randomTopic = topics[Math.floor(Math.random() * topics.length)];
     
     const promptStyles = [
-      `About ${randomTopic}: Give me ONE spicy fact in 10 words or less.`,
-      `${randomTopic}: Drop a hot take in 8 words max.`,
-      `Give the wildest truth about ${randomTopic} in under 10 words.`,
-      `${randomTopic}: Most degen thing in 8 words or less.`,
-      `Expose ${randomTopic} in ONE ultra-short sentence. Max 10 words.`
+      `About ${randomTopic}: Give me a spicy crypto fact in 1-2 sentences. Max 200 chars.`,
+      `${randomTopic}: Drop a shocking truth. Keep it under 200 characters total.`,
+      `Share the wildest thing about ${randomTopic}. 1-2 sentences, max 200 chars.`,
+      `${randomTopic}: What's the most degen thing? Keep it short, under 200 chars.`,
+      `Expose the truth about ${randomTopic} in 1-2 sentences. Max 200 characters.`
     ];
     
     const randomPrompt = promptStyles[Math.floor(Math.random() * promptStyles.length)];
@@ -198,7 +198,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You write ONE ultra-short crypto fact. MAXIMUM 100 characters including emojis. One sentence only. Use degen slang. Be spicy. NO long explanations.'
+            content: 'You write short, spicy crypto facts. Keep it to 1-2 sentences, MAX 200 characters including emojis. Use degen slang. Be bold and real. Add 1-2 emojis max.'
           },
           {
             role: 'user',
@@ -219,9 +219,9 @@ serve(async (req) => {
     const aiData = await aiResponse.json();
     let fact = aiData.choices[0].message.content;
     
-    // Aggressively trim if too long
-    if (fact.length > 100) {
-      fact = fact.substring(0, 97) + '...';
+    // Trim if too long (leave room for Twitter prefix)
+    if (fact.length > 270) {
+      fact = fact.substring(0, 267) + '...';
     }
     
     console.log('Generated fact:', fact, '- Length:', fact.length);
@@ -262,18 +262,19 @@ serve(async (req) => {
 
     // Post to Twitter/X (keep under 280 chars)
     try {
-      // Simple format for Twitter - just the fact with emojis
       const tweetText = `🔥 ${fact}`;
       
-      // Double check character count (emojis count as 2 chars on Twitter)
+      // Verify under 280 characters
       if (tweetText.length > 280) {
-        console.error('Tweet too long:', tweetText.length, 'chars');
-        throw new Error('Tweet exceeds 280 character limit');
+        const trimmedFact = fact.substring(0, 276) + '...';
+        console.log('Tweet was too long, trimmed to:', trimmedFact.length + 3);
+        const twitterResult = await sendTweet(`🔥 ${trimmedFact}`);
+        console.log('Twitter posted (trimmed):', twitterResult.data?.id);
+      } else {
+        console.log('Posting tweet:', tweetText.length, 'chars');
+        const twitterResult = await sendTweet(tweetText);
+        console.log('Twitter posted:', twitterResult.data?.id);
       }
-      
-      console.log('Posting tweet:', tweetText, '- Length:', tweetText.length);
-      const twitterResult = await sendTweet(tweetText);
-      console.log('Twitter fact posted:', twitterResult);
     } catch (twitterError) {
       console.error('Failed to post to Twitter:', twitterError);
       // Continue execution even if Twitter fails

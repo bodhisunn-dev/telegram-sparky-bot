@@ -9,6 +9,7 @@ import UserLeaderboard from "@/components/UserLeaderboard";
 import RecentMessages from "@/components/RecentMessages";
 import BotConfig from "@/components/BotConfig";
 import { Auth } from "@/components/Auth";
+import { AdminManagement } from "@/components/AdminManagement";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -17,12 +18,26 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const { data: metrics, isLoading } = useDashboardMetrics();
   const { toast } = useToast();
 
   useEffect(() => {
+    const checkAdminStatus = async (userId: string) => {
+      const { data, error } = await supabase
+        .from('admin_users')
+        .select('user_id')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      setIsAdmin(!!data && !error);
+    };
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if (session?.user?.id) {
+        checkAdminStatus(session.user.id);
+      }
       setLoading(false);
     });
 
@@ -30,6 +45,11 @@ const Index = () => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (session?.user?.id) {
+        checkAdminStatus(session.user.id);
+      } else {
+        setIsAdmin(null);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -43,7 +63,7 @@ const Index = () => {
     });
   };
 
-  if (loading) {
+  if (loading || (session && isAdmin === null)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center space-y-4">
@@ -56,6 +76,27 @@ const Index = () => {
 
   if (!session) {
     return <Auth />;
+  }
+
+  if (isAdmin === false) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Card className="max-w-md border-border">
+          <CardHeader className="text-center">
+            <Bot className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+            <CardTitle>Access Denied</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <p className="text-muted-foreground">
+              Your account does not have admin privileges to access this dashboard.
+            </p>
+            <Button onClick={handleSignOut} variant="outline">
+              Sign Out
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -96,6 +137,7 @@ const Index = () => {
               <TabsTrigger value="users">Users</TabsTrigger>
               <TabsTrigger value="messages">Messages</TabsTrigger>
               <TabsTrigger value="config">Configuration</TabsTrigger>
+              <TabsTrigger value="admins">Admins</TabsTrigger>
             </TabsList>
 
             <TabsContent value="dashboard" className="space-y-6">
@@ -183,6 +225,10 @@ const Index = () => {
 
             <TabsContent value="config">
               <BotConfig />
+            </TabsContent>
+
+            <TabsContent value="admins">
+              <AdminManagement />
             </TabsContent>
           </Tabs>
         </div>

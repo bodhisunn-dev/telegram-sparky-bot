@@ -28,7 +28,7 @@ export const Auth = () => {
         
         toast({
           title: "Success!",
-          description: "Account created. You can now sign in.",
+          description: "Account created. The first user is automatically granted admin access.",
         });
         setIsSignUp(false);
       } else {

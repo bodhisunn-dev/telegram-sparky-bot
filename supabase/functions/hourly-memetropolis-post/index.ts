@@ -37,35 +37,20 @@ serve(async (req) => {
     // Select random message
     const randomMessage = degenMessages[Math.floor(Math.random() * degenMessages.length)];
 
-    console.log('Sending photo to chat:', CHAT_ID);
+    console.log('Sending text message to chat:', CHAT_ID);
 
-    // Fetch image from Supabase Storage
-    const IMAGE_URL = `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/bot-media/memetropolis-image.png`;
-    console.log('Fetching image from:', IMAGE_URL);
-    
-    const imageResponse = await fetch(IMAGE_URL);
-    
-    if (!imageResponse.ok) {
-      console.error('Failed to fetch image:', imageResponse.status, imageResponse.statusText);
-      throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
-    }
-    
-    const imageBuffer = await imageResponse.arrayBuffer();
-    const imageBlob = new Blob([imageBuffer], { type: 'image/png' });
-    console.log('Image fetched, size:', imageBlob.size, 'bytes (', (imageBlob.size / 1024 / 1024).toFixed(2), 'MB)');
-
-    // Create FormData to send file
-    const formData = new FormData();
-    formData.append('chat_id', CHAT_ID.toString());
-    formData.append('photo', imageBlob, 'memetropolis.png');
-    formData.append('caption', randomMessage);
-
-    // Send photo to Telegram
+    // Send text message to Telegram
     const telegramResponse = await fetch(
-      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`,
+      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
       {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chat_id: CHAT_ID,
+          text: randomMessage,
+        }),
       }
     );
 
@@ -73,9 +58,9 @@ serve(async (req) => {
     console.log('Telegram API response:', result);
 
     if (!result.ok) {
-      console.error('Failed to send photo:', result);
+      console.error('Failed to send message:', result);
       return new Response(
-        JSON.stringify({ error: 'Failed to send photo', details: result }),
+        JSON.stringify({ error: 'Failed to send message', details: result }),
         { 
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }

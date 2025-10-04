@@ -39,11 +39,12 @@ serve(async (req) => {
 
     console.log('Sending animation to chat:', CHAT_ID);
 
-    // Reuse Telegram file_id from a previous successful upload
-    // This video was uploaded successfully before with file_id
-    const VIDEO_FILE_ID = 'BAACAgEAAyEGAASwUjRsAAIFAmjgj00fAj760A-9IIPI-9UyzJXwAAKuBgACUDgJR0vwxE2rBXH_NgQ';
+    // Use video from Supabase Storage
+    const VIDEO_URL = `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/bot-media/memetropolis-animation.mp4`;
+    
+    console.log('Using video URL:', VIDEO_URL);
 
-    // Send animation to Telegram using file_id
+    // Send animation to Telegram
     const telegramResponse = await fetch(
       `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendAnimation`,
       {
@@ -53,7 +54,7 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           chat_id: CHAT_ID,
-          animation: VIDEO_FILE_ID,
+          animation: VIDEO_URL,
           caption: randomMessage,
           parse_mode: 'HTML',
         }),

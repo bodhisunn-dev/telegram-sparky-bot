@@ -11,6 +11,7 @@ import BotConfig from "@/components/BotConfig";
 import { Auth } from "@/components/Auth";
 import { AdminManagement } from "@/components/AdminManagement";
 import { TestMemetropolisPost } from "@/components/TestMemetropolisPost";
+import { UploadMemetropolisVideo } from "@/components/UploadMemetropolisVideo";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -226,6 +227,7 @@ const Index = () => {
 
             <TabsContent value="config">
               <div className="space-y-6">
+                <UploadMemetropolisVideo />
                 <TestMemetropolisPost />
                 <BotConfig />
               </div>

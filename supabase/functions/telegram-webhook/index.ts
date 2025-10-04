@@ -237,7 +237,16 @@ serve(async (req) => {
           const filePath = fileData.result.file_path;
           const fileUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
           
+          const statusMessage = `Generating image (remix): "${description}"...`;
           await sendTelegramMessage(chatId, `🎨 Remixing your image with: "${description}"...`);
+          
+          // Store the "Generating image" status message for tracking
+          await supabase.from('messages').insert({
+            telegram_user_id: userData?.id,
+            chat_id: chatId,
+            message_text: statusMessage,
+            is_bot_message: true
+          });
           
           // Call remix-image function
           const { data: remixData, error: remixError } = await supabase.functions.invoke('remix-image', {
@@ -250,6 +259,14 @@ serve(async (req) => {
           } else if (remixData?.image) {
             // Send remixed image back to Telegram
             await sendTelegramPhoto(chatId, remixData.image);
+            
+            // Store success message
+            await supabase.from('messages').insert({
+              telegram_user_id: userData?.id,
+              chat_id: chatId,
+              message_text: '✅ Image remixed successfully',
+              is_bot_message: true
+            });
           }
         }
       } else {

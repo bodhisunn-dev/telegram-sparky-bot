@@ -25,12 +25,12 @@ export const useDashboardMetrics = () => {
         .select('*', { count: 'exact', head: true })
         .gte('last_active_at', yesterday.toISOString());
 
-      // Get images generated (bot messages with image data)
+      // Get images generated (count /generate and /remix commands)
       const { count: imagesGenerated } = await supabase
         .from('messages')
         .select('*', { count: 'exact', head: true })
-        .eq('is_bot_message', true)
-        .or('message_text.ilike.%data:image%,message_text.ilike.%🎨%');
+        .eq('is_bot_message', false)
+        .or('message_text.ilike./generate%,message_text.ilike./remix%');
 
       return {
         totalUsers: totalUsers || 0,

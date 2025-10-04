@@ -178,11 +178,11 @@ serve(async (req) => {
     const randomTopic = topics[Math.floor(Math.random() * topics.length)];
     
     const promptStyles = [
-      `Share a spicy hot take about ${randomTopic} in 1 SHORT sentence. Max 150 characters. Be bold and degen.`,
-      `Drop a shocking fact about ${randomTopic} in under 150 chars. Make it hit hard.`,
-      `Give me the wildest truth about ${randomTopic}. One sentence only, under 150 chars. Be spicy.`,
-      `What's the most degen thing about ${randomTopic}? Keep it under 150 characters.`,
-      `Expose something crazy about ${randomTopic}. ONE short sentence, max 150 chars.`
+      `About ${randomTopic}: Give me ONE spicy fact in 10 words or less.`,
+      `${randomTopic}: Drop a hot take in 8 words max.`,
+      `Give the wildest truth about ${randomTopic} in under 10 words.`,
+      `${randomTopic}: Most degen thing in 8 words or less.`,
+      `Expose ${randomTopic} in ONE ultra-short sentence. Max 10 words.`
     ];
     
     const randomPrompt = promptStyles[Math.floor(Math.random() * promptStyles.length)];
@@ -198,7 +198,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a degen crypto expert. Write ONE SHORT spicy sentence about crypto. Max 150 characters total. Use degen slang. Add 1-2 emojis MAX. Be bold, real, and hit different. No fluff.'
+            content: 'You write ONE ultra-short crypto fact. MAXIMUM 100 characters including emojis. One sentence only. Use degen slang. Be spicy. NO long explanations.'
           },
           {
             role: 'user',
@@ -219,10 +219,12 @@ serve(async (req) => {
     const aiData = await aiResponse.json();
     let fact = aiData.choices[0].message.content;
     
-    // Trim if too long (accounting for emojis which can be 2-4 bytes each)
-    if (fact.length > 150) {
-      fact = fact.substring(0, 147) + '...';
+    // Aggressively trim if too long
+    if (fact.length > 100) {
+      fact = fact.substring(0, 97) + '...';
     }
+    
+    console.log('Generated fact:', fact, '- Length:', fact.length);
 
     // Check if this fact was posted recently (within last 7 days)
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -244,19 +246,19 @@ serve(async (req) => {
       });
     }
 
-    // Send the fact to Telegram
+    // Send the fact to Telegram with simple format
+    const telegramText = `🔥 Crypto Truth: ${fact}`;
     const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: chatId,
-        text: `💡 *Random Fact* 💡\n\n${fact}`,
-        parse_mode: 'Markdown',
+        text: telegramText,
       }),
     });
 
     const telegramResult = await telegramResponse.json();
-    console.log('Telegram fact posted:', telegramResult);
+    console.log('Telegram posted:', telegramResult.ok);
 
     // Post to Twitter/X (keep under 280 chars)
     try {

@@ -1,25 +1,132 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
-const CHAT_ID = -1002342027931; // Same chat as random facts
+import { createHmac } from "node:crypto";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Twitter OAuth 1.0a helper functions
+function generateOAuthSignature(
+  method: string,
+  url: string,
+  params: Record<string, string>,
+  consumerSecret: string,
+  tokenSecret: string
+): string {
+  const signatureBaseString = `${method}&${encodeURIComponent(
+    url
+  )}&${encodeURIComponent(
+    Object.entries(params)
+      .sort()
+      .map(([k, v]) => `${k}=${v}`)
+      .join("&")
+  )}`;
+  const signingKey = `${encodeURIComponent(
+    consumerSecret
+  )}&${encodeURIComponent(tokenSecret)}`;
+  const hmacSha1 = createHmac("sha1", signingKey);
+  const signature = hmacSha1.update(signatureBaseString).digest("base64");
+  return signature;
+}
+
+function generateOAuthHeader(
+  method: string, 
+  url: string,
+  consumerKey: string,
+  consumerSecret: string,
+  accessToken: string,
+  accessTokenSecret: string
+): string {
+  const oauthParams = {
+    oauth_consumer_key: consumerKey,
+    oauth_nonce: Math.random().toString(36).substring(2),
+    oauth_signature_method: "HMAC-SHA1",
+    oauth_timestamp: Math.floor(Date.now() / 1000).toString(),
+    oauth_token: accessToken,
+    oauth_version: "1.0",
+  };
+
+  const signature = generateOAuthSignature(
+    method,
+    url,
+    oauthParams,
+    consumerSecret,
+    accessTokenSecret
+  );
+
+  const signedOAuthParams = {
+    ...oauthParams,
+    oauth_signature: signature,
+  };
+
+  const entries = Object.entries(signedOAuthParams).sort((a, b) =>
+    a[0].localeCompare(b[0])
+  );
+
+  return (
+    "OAuth " +
+    entries
+      .map(([k, v]) => `${encodeURIComponent(k)}="${encodeURIComponent(v)}"`)
+      .join(", ")
+  );
+}
+
+async function sendTweet(tweetText: string): Promise<any> {
+  const CONSUMER_KEY = Deno.env.get("TWITTER_CONSUMER_KEY")?.trim();
+  const CONSUMER_SECRET = Deno.env.get("TWITTER_CONSUMER_SECRET")?.trim();
+  const ACCESS_TOKEN = Deno.env.get("TWITTER_ACCESS_TOKEN")?.trim();
+  const ACCESS_TOKEN_SECRET = Deno.env.get("TWITTER_ACCESS_TOKEN_SECRET")?.trim();
+
+  if (!CONSUMER_KEY || !CONSUMER_SECRET || !ACCESS_TOKEN || !ACCESS_TOKEN_SECRET) {
+    throw new Error("Missing Twitter credentials");
+  }
+
+  const url = "https://api.x.com/2/tweets";
+  const method = "POST";
+  
+  const oauthHeader = generateOAuthHeader(
+    method, 
+    url, 
+    CONSUMER_KEY, 
+    CONSUMER_SECRET, 
+    ACCESS_TOKEN, 
+    ACCESS_TOKEN_SECRET
+  );
+
+  const response = await fetch(url, {
+    method: method,
+    headers: {
+      Authorization: oauthHeader,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ text: tweetText }),
+  });
+
+  const responseText = await response.text();
+  console.log("Twitter API Response:", responseText);
+
+  if (!response.ok) {
+    throw new Error(
+      `Twitter API error! status: ${response.status}, body: ${responseText}`
+    );
+  }
+
+  return JSON.parse(responseText);
+}
+
 const degenMessages = [
-  "🚀 GM DEGENS! 🌟 Memetropolis.ai is the ONLY Omnichain OFT Launchpad you need! 💎\n\n✨ 6 CHAINS united with Native Interoperability between Solana & EVM! 🔥\n\n🎯 Time to SMASH those raids and SHILL like your bags depend on it! 💰\n\n👉 Follow & engage: https://x.com/memetropolis_ai\n\n#Memetropolis #OmnichainRevolution 🌊",
+  "🚀 GM DEGENS! Memetropolis.ai is the ONLY Omnichain OFT Launchpad! 6 CHAINS united 💎\n\nFollow: https://x.com/memetropolis_ai\n\n#Memetropolis #Omnichain",
   
-  "⚡️ ATTENTION ALPHA HUNTERS! 🎯\n\nMemetropolis.ai isn't just a launchpad... it's THE BRIDGE between Solana & EVM! 🌉\n\n🔥 6 chains, infinite possibilities\n💎 Native interoperability = GAME CHANGER\n🚀 Your next 100x starts HERE\n\n💪 SMASH that raid button! SHILL with passion!\n\n📱 https://x.com/memetropolis_ai\n\n#DeFi #Omnichain #WAGMI 🎰",
+  "⚡️ ALPHA HUNTERS! Memetropolis.ai = THE BRIDGE between Solana & EVM! 6 chains, infinite possibilities 🔥\n\nhttps://x.com/memetropolis_ai\n\n#DeFi #Omnichain",
   
-  "🌟 YO DEGENS! Ready for the OMNICHAIN revolution? 🔥\n\n🎪 Memetropolis.ai = Where Solana MEETS EVM magic! ✨\n\n🎯 6 chains locked & loaded\n💰 OFT Launchpad on steroids\n🔗 Native interop = NO BRIDGES NEEDED!\n\n👊 Time to RAID! Time to SHILL! LFG! 🚀\n\n🐦 https://x.com/memetropolis_ai\n\n#Memetropolis #CrossChainKing 💎",
+  "🌟 YO DEGENS! Ready for OMNICHAIN revolution? Memetropolis.ai = Solana MEETS EVM magic! LFG! 🚀\n\nhttps://x.com/memetropolis_ai\n\n#Memetropolis",
   
-  "🎰 DEGEN ALERT! 🚨\n\nWhy choose ONE chain when you can have SIX? 🎯\n\n🌈 Memetropolis.ai bringing that OMNICHAIN heat! 🔥\n✨ Solana + EVM = UNSTOPPABLE\n💎 The only OFT Launchpad that matters\n🚀 Native interoperability = SMOOTH AF\n\n⚔️ RAID MODE: ACTIVATED\n📢 SHILL LEVEL: MAXIMUM\n\n💫 https://x.com/memetropolis_ai\n\n#OmnichainGang #Memetropolis 🎪",
+  "🎰 DEGEN ALERT! Why choose ONE chain when you can have SIX? Memetropolis.ai bringing OMNICHAIN heat! 🔥\n\nhttps://x.com/memetropolis_ai\n\n#OmnichainGang",
   
-  "🔥 GM to the REAL ONES! 💎\n\nMemetropolis.ai just hits DIFFERENT! 🎯\n\n🌟 6 CHAINS unified\n🌉 Solana ↔️ EVM seamlessly\n🎪 THE Omnichain OFT Launchpad\n💰 Zero friction, pure gains\n\n💪 Let's SMASH those raids!\n📣 Let's SHILL to the moon!\n\n🐦 Drop engagement here: https://x.com/memetropolis_ai\n\n#Memetropolis #DeFiRevolution 🚀",
+  "🔥 GM REAL ONES! Memetropolis.ai hits DIFFERENT! 6 CHAINS unified, THE Omnichain OFT Launchpad 💎\n\nhttps://x.com/memetropolis_ai\n\n#Memetropolis",
   
-  "⚡️ WAKE UP DEGENS! ⚡️\n\n🎪 Memetropolis.ai = Your ticket to OMNICHAIN domination! 👑\n\n✅ 6 chains in ONE ecosystem\n✅ Solana + EVM living in harmony\n✅ Native OFT Launchpad power\n✅ Interoperability like you've NEVER seen\n\n🎯 Mission: RAID EVERYTHING\n📢 Mission: SHILL EVERYWHERE\n\n💎 https://x.com/memetropolis_ai\n\n#CrossChain #Memetropolis #LFG 🌊"
+  "⚡️ WAKE UP DEGENS! Memetropolis.ai = Your ticket to OMNICHAIN domination! 6 chains in ONE 👑\n\nhttps://x.com/memetropolis_ai\n\n#CrossChain"
 ];
 
 serve(async (req) => {
@@ -28,58 +135,25 @@ serve(async (req) => {
   }
 
   try {
-    if (!TELEGRAM_BOT_TOKEN) {
-      throw new Error('TELEGRAM_BOT_TOKEN not configured');
-    }
-
-    console.log('Starting hourly Memetropolis post...');
+    console.log('Starting hourly Memetropolis post to Twitter...');
 
     // Select random message
     const randomMessage = degenMessages[Math.floor(Math.random() * degenMessages.length)];
+    
+    console.log('Posting to Twitter:', randomMessage);
+    const result = await sendTweet(randomMessage);
+    console.log('Twitter post successful:', result.data?.id);
 
-    console.log('Sending text message to chat:', CHAT_ID);
+    return new Response(JSON.stringify({ ok: true, message: randomMessage, tweet_id: result.data?.id }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
 
-    // Send text message to Telegram
-    const telegramResponse = await fetch(
-      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          chat_id: CHAT_ID,
-          text: randomMessage,
-        }),
-      }
-    );
-
-    const result = await telegramResponse.json();
-    console.log('Telegram API response:', result);
-
-    if (!result.ok) {
-      console.error('Failed to send message:', result);
-      return new Response(
-        JSON.stringify({ error: 'Failed to send message', details: result }),
-        { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    return new Response(
-      JSON.stringify({ success: true, result }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
   } catch (error) {
-    console.error('Error in hourly-memetropolis-post:', error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
+    console.error('Error in hourly-memetropolis-post function:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 });

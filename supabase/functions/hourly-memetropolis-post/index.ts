@@ -54,27 +54,27 @@ serve(async (req) => {
     // Select random message
     const randomMessage = degenMessages[Math.floor(Math.random() * degenMessages.length)];
     
-    // Get video from Supabase Storage
-    const { data: videoData, error: storageError } = await supabase
+    // Get image from Supabase Storage
+    const { data: imageData, error: storageError } = await supabase
       .storage
       .from('bot-media')
-      .download('memetropolis-animation.mp4');
+      .download('memetropolis-image.png');
 
     if (storageError) {
       console.error('Storage error:', storageError);
-      throw new Error(`Failed to fetch video from storage: ${storageError.message}`);
+      throw new Error(`Failed to fetch image from storage: ${storageError.message}`);
     }
 
     // Convert blob to array buffer for Telegram
-    const videoBuffer = await videoData.arrayBuffer();
+    const imageBuffer = await imageData.arrayBuffer();
 
-    // Send video with caption to Telegram
+    // Send image with caption to Telegram
     const formData = new FormData();
     formData.append('chat_id', chatId.toString());
-    formData.append('video', new Blob([videoBuffer], { type: 'video/mp4' }), 'memetropolis-animation.mp4');
+    formData.append('photo', new Blob([imageBuffer], { type: 'image/png' }), 'memetropolis-image.png');
     formData.append('caption', randomMessage);
 
-    const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendVideo`, {
+    const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
       method: 'POST',
       body: formData,
     });

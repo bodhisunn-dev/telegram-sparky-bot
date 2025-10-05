@@ -58,15 +58,15 @@ serve(async (req) => {
     //const imageUrl = 'https://i.imgur.com/DKs4x7a.png';
 
     // Send image with caption to Telegram using URL
-    const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+   // const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+     // method: 'POST',
+     // headers: {
+      //  'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        chat_id: chatId,
-        photo: imageUrl,
-        caption: randomMessage,
+     // body: JSON.stringify({
+     //   chat_id: chatId,
+       // photo: imageUrl,
+//        caption: randomMessage,
       }),
     });
 

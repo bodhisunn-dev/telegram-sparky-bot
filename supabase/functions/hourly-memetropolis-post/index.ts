@@ -54,29 +54,20 @@ serve(async (req) => {
     // Select random message
     const randomMessage = degenMessages[Math.floor(Math.random() * degenMessages.length)];
     
-    // Get image from Supabase Storage
-    const { data: imageData, error: storageError } = await supabase
-      .storage
-      .from('bot-media')
-      .download('memetropolis-image.png');
+    // Use Imgur direct image URL
+    const imageUrl = 'https://i.imgur.com/DKs4x7a.png';
 
-    if (storageError) {
-      console.error('Storage error:', storageError);
-      throw new Error(`Failed to fetch image from storage: ${storageError.message}`);
-    }
-
-    // Convert blob to array buffer for Telegram
-    const imageBuffer = await imageData.arrayBuffer();
-
-    // Send image with caption to Telegram
-    const formData = new FormData();
-    formData.append('chat_id', chatId.toString());
-    formData.append('photo', new Blob([imageBuffer], { type: 'image/png' }), 'memetropolis-image.png');
-    formData.append('caption', randomMessage);
-
+    // Send image with caption to Telegram using URL
     const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
       method: 'POST',
-      body: formData,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_id: chatId,
+        photo: imageUrl,
+        caption: randomMessage,
+      }),
     });
 
     const telegramResult = await telegramResponse.json();

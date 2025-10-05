@@ -55,7 +55,7 @@ serve(async (req) => {
     const randomMessage = degenMessages[Math.floor(Math.random() * degenMessages.length)];
     
     // Use Imgur direct image URL
-    const imageUrl = 'https://imgur.com/a/DUSCCda.png';
+    const imageUrl = 'https://imgur.com/Pn6GPjy';
 
     // Send image with caption to Telegram using URL
     const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {

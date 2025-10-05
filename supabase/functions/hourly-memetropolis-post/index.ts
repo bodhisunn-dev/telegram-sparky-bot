@@ -54,14 +54,24 @@ serve(async (req) => {
     // Select random message
     const randomMessage = degenMessages[Math.floor(Math.random() * degenMessages.length)];
     
-    // Read the video file
-    const videoPath = new URL('./memetropolis-animation.mp4', import.meta.url).pathname;
-    const videoFile = await Deno.readFile(videoPath);
+    // Get video from Supabase Storage
+    const { data: videoData, error: storageError } = await supabase
+      .storage
+      .from('bot-media')
+      .download('memetropolis-animation.mp4');
+
+    if (storageError) {
+      console.error('Storage error:', storageError);
+      throw new Error(`Failed to fetch video from storage: ${storageError.message}`);
+    }
+
+    // Convert blob to array buffer for Telegram
+    const videoBuffer = await videoData.arrayBuffer();
 
     // Send video with caption to Telegram
     const formData = new FormData();
     formData.append('chat_id', chatId.toString());
-    formData.append('video', new Blob([videoFile], { type: 'video/mp4' }), 'memetropolis-animation.mp4');
+    formData.append('video', new Blob([videoBuffer], { type: 'video/mp4' }), 'memetropolis-animation.mp4');
     formData.append('caption', randomMessage);
 
     const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendVideo`, {

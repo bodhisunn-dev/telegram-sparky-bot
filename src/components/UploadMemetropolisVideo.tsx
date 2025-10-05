@@ -8,6 +8,7 @@ import { Loader2, Upload } from "lucide-react";
 
 export const UploadMemetropolisVideo = () => {
   const [uploading, setUploading] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -81,9 +82,9 @@ export const UploadMemetropolisVideo = () => {
   return (
     <Card className="border-border">
       <CardHeader>
-        <CardTitle>Upload Image to Storage</CardTitle>
+        <CardTitle>Upload Media to Storage</CardTitle>
         <CardDescription>
-          Upload the Memetropolis promotional image to Supabase Storage
+          Upload the Memetropolis promotional image and video to Supabase Storage for hourly posts
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -144,6 +145,51 @@ export const UploadMemetropolisVideo = () => {
               <>
                 <Upload className="w-4 h-4" />
                 Upload Selected
+              </>
+            )}
+          </Button>
+        </div>
+        
+        <div className="border-t pt-4 mt-4">
+          <h4 className="text-sm font-medium mb-3">Upload Hourly Post Video</h4>
+          <Button
+            onClick={async () => {
+              setUploadingVideo(true);
+              try {
+                const response = await fetch('/memetropolis-animation.mp4');
+                if (!response.ok) throw new Error('Video file not found in /public');
+                const blob = await response.blob();
+                console.log('Video size:', blob.size);
+                
+                const { error } = await supabase.storage
+                  .from('bot-media')
+                  .upload('memetropolis-animation.mp4', blob, {
+                    cacheControl: '3600',
+                    upsert: true,
+                    contentType: 'video/mp4'
+                  });
+                if (error) throw error;
+                toast({ title: "Video uploaded! ✅", description: "Hourly posts will now include the video." });
+              } catch (error: any) {
+                toast({ title: "Upload Failed", description: error.message, variant: "destructive" });
+                console.error('Video upload error:', error);
+              } finally {
+                setUploadingVideo(false);
+              }
+            }}
+            disabled={uploadingVideo}
+            variant="default"
+            className="gap-2 w-full"
+          >
+            {uploadingVideo ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Uploading Video...
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4" />
+                Upload Default Video
               </>
             )}
           </Button>

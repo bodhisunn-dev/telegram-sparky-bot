@@ -2,6 +2,7 @@
 """
 Telegram Member Sync Script
 Fetches all members from a Telegram supergroup and syncs them to Supabase
+REQUIRES: User account authentication (phone number) to access all members
 """
 
 import os
@@ -18,15 +19,15 @@ load_dotenv()
 # Telegram API credentials
 API_ID = int(os.getenv('TELEGRAM_API_ID'))
 API_HASH = os.getenv('TELEGRAM_API_HASH')
-BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+PHONE_NUMBER = os.getenv('TELEGRAM_PHONE_NUMBER')  # User's phone number with country code
 CHAT_ID = int(os.getenv('TELEGRAM_CHAT_ID'))
 
 # Supabase credentials
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
 
-# Initialize Telethon client
-client = TelegramClient('bot_session', API_ID, API_HASH)
+# Initialize Telethon client with user session
+client = TelegramClient('user_session', API_ID, API_HASH)
 
 
 async def fetch_all_members():
@@ -101,15 +102,15 @@ async def get_chat_info():
 async def main():
     """Main function"""
     print("=" * 60)
-    print("🤖 TELEGRAM MEMBER SYNC SCRIPT v2.0 [FIXED CONNECTION ORDER]")
+    print("🤖 TELEGRAM MEMBER SYNC SCRIPT v3.0 [USER AUTH FOR FULL ACCESS]")
     print("=" * 60)
     print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
     
     try:
-        # Connect to Telegram first
-        print(f"🔄 Connecting to Telegram...")
-        await client.start(bot_token=BOT_TOKEN)
-        print(f"✅ Connected to Telegram as bot")
+        # Connect to Telegram with user account (required for full member list)
+        print(f"🔄 Connecting to Telegram with user account...")
+        await client.start(phone=PHONE_NUMBER)
+        print(f"✅ Connected to Telegram as user account")
         
         # Get chat info
         await get_chat_info()

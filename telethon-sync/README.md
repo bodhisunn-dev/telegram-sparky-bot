@@ -2,6 +2,8 @@
 
 This Python service uses Telethon to fetch all members from your Telegram supergroup and sync them to your Supabase database.
 
+**IMPORTANT**: This service uses **user account authentication** (not bot authentication) to access the full member list of your supergroup. Bots can only see members who recently interacted with the chat, but user accounts can see all members.
+
 ## Setup Instructions
 
 ### 1. Install Python Dependencies
@@ -23,7 +25,9 @@ nano .env  # or use your preferred editor
 Required variables:
 - `TELEGRAM_API_ID` - Already set (28077951)
 - `TELEGRAM_API_HASH` - Already set (17d0f93abcccfd735df0fe79258156e0)
-- `TELEGRAM_BOT_TOKEN` - Get from @BotFather on Telegram
+- `TELEGRAM_PHONE_NUMBER` - **YOUR phone number with country code** (e.g., +12345678900)
+  - This must be a phone number that's a member of the supergroup
+  - Used for user authentication to access all members
 - `TELEGRAM_CHAT_ID` - Your supergroup chat ID (e.g., -1002342027931)
   - Find this in your Supabase `messages` table - look at any `chat_id` value
 - `SUPABASE_URL` - Already set (https://eptbjrnqydvkkplousle.supabase.co)
@@ -32,9 +36,22 @@ Required variables:
   - Go to Settings → API
   - Copy the `service_role` key (NOT the `anon` key!)
 
-### 3. Run the Sync
+### 3. First-Time Authentication
 
-#### One-time sync:
+The first time you run the script, Telegram will send a verification code to your phone:
+
+```bash
+python sync_members.py
+```
+
+You'll see:
+```
+Please enter the code you received: _____
+```
+
+Enter the code from your Telegram app. This creates a session file that's reused for future syncs.
+
+### 4. Run the Sync
 ```bash
 python sync_members.py
 ```
@@ -105,10 +122,18 @@ git push heroku main
 
 ## How It Works
 
-1. **Telethon Client** connects to Telegram using your API credentials
-2. **Fetches all members** from the specified supergroup (even inactive users)
-3. **Syncs to Supabase** by upserting to the `telegram_users` table
-4. Your existing **mention-users Edge Function** then works with the full member list
+1. **User Authentication** - Uses your phone number to authenticate (required to see all members)
+2. **Telethon Client** connects to Telegram using your API credentials
+3. **Fetches all members** from the specified supergroup (including inactive users)
+4. **Syncs to Supabase** by upserting to the `telegram_users` table
+5. Your existing **mention-users Edge Function** then works with the full member list
+
+## Why User Authentication?
+
+- **Bot accounts** can only see ~50-100 members who recently interacted
+- **User accounts** can see all 800+ members in the supergroup
+- Your phone number must be a member of the group
+- Authentication happens once, then a session file is saved
 
 ## Features
 
@@ -136,12 +161,21 @@ docker logs -f telegram-sync
 ## Troubleshooting
 
 ### "Could not find the input entity"
-- Make sure your bot is a member of the group
+- Make sure your phone number is a member of the group
 - Verify the CHAT_ID is correct (should be negative for supergroups)
 
-### "Phone number required"
-- You're using bot authentication (BOT_TOKEN), not phone auth
-- Make sure BOT_TOKEN is set correctly
+### "Phone number required" or verification code issues
+- Make sure TELEGRAM_PHONE_NUMBER is set with country code (e.g., +12345678900)
+- Enter the verification code from Telegram when prompted
+- The session file (user_session.session) will be created after first login
+
+### Only seeing 31 users instead of 800+
+- **This means you're still using bot authentication**
+- Make sure you updated Railway environment variables:
+  - Remove `TELEGRAM_BOT_TOKEN`
+  - Add `TELEGRAM_PHONE_NUMBER`
+- Redeploy the Railway service
+- Complete the phone verification when it first runs
 
 ### Rate limiting
 - Telethon handles rate limits automatically
@@ -149,7 +183,8 @@ docker logs -f telegram-sync
 
 ## Notes
 
-- First sync will create a `bot_session.session` file (keep this safe)
+- First sync requires phone verification and creates a `user_session.session` file (keep this safe!)
 - The sync respects Telegram's rate limits automatically
 - Members without usernames can still be synced (stored with null username)
 - Your mention-users function will automatically use the updated member list
+- Session file allows future syncs without re-authentication

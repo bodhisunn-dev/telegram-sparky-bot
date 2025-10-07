@@ -8,6 +8,7 @@ REQUIRES: User account authentication (phone number) to access all members
 import os
 import asyncio
 from telethon import TelegramClient
+from telethon.sessions import StringSession
 from telethon.tl.types import User
 from dotenv import load_dotenv
 from supabase import create_client, Client
@@ -21,13 +22,19 @@ API_ID = int(os.getenv('TELEGRAM_API_ID'))
 API_HASH = os.getenv('TELEGRAM_API_HASH')
 PHONE_NUMBER = os.getenv('TELEGRAM_PHONE_NUMBER')  # User's phone number with country code
 CHAT_ID = int(os.getenv('TELEGRAM_CHAT_ID'))
+SESSION_STRING = os.getenv('TELEGRAM_SESSION_STRING', '')  # Optional: session string for Railway
 
 # Supabase credentials
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
 
-# Initialize Telethon client with user session
-client = TelegramClient('user_session', API_ID, API_HASH)
+# Initialize Telethon client with session string or file-based session
+if SESSION_STRING:
+    print("🔑 Using session string from environment variable")
+    client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
+else:
+    print("📁 Using file-based session (will require authentication)")
+    client = TelegramClient('user_session', API_ID, API_HASH)
 
 
 async def fetch_all_members():
@@ -111,6 +118,17 @@ async def main():
         print(f"🔄 Connecting to Telegram with user account...")
         await client.start(phone=PHONE_NUMBER)
         print(f"✅ Connected to Telegram as user account")
+        
+        # Print session string for Railway deployment (only if using file-based session)
+        if not SESSION_STRING:
+            session_string = client.session.save()
+            print("\n" + "=" * 60)
+            print("🔑 SAVE THIS SESSION STRING FOR RAILWAY:")
+            print("=" * 60)
+            print(session_string)
+            print("=" * 60)
+            print("Add this as TELEGRAM_SESSION_STRING environment variable in Railway")
+            print("=" * 60 + "\n")
         
         # Get chat info
         await get_chat_info()

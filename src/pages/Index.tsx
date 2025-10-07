@@ -14,6 +14,7 @@ import { TestMemetropolisPost } from "@/components/TestMemetropolisPost";
 import { UploadMemetropolisVideo } from "@/components/UploadMemetropolisVideo";
 import { TestRandomFactPost } from "@/components/TestRandomFactPost";
 import { TestDailyGM } from "@/components/TestDailyGM";
+import { TestTopActiveShoutout } from "@/components/TestTopActiveShoutout";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -233,6 +234,7 @@ const Index = () => {
                 <TestMemetropolisPost />
                 <TestRandomFactPost />
                 <TestDailyGM />
+                <TestTopActiveShoutout />
                 <BotConfig />
               </div>
             </TabsContent>

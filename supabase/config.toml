@@ -3,6 +3,9 @@ project_id = "eptbjrnqydvkkplousle"
 [functions.telegram-webhook]
 verify_jwt = false
 
+[functions.top-active-shoutout]
+verify_jwt = false
+
 [functions.chat-ai]
 verify_jwt = false
 

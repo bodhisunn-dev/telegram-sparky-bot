@@ -11,9 +11,10 @@ Deno.serve(async (req) => {
   try {
     const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
     const TELEGRAM_CHAT_ID = Deno.env.get('TELEGRAM_CHAT_ID');
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
-    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
-      throw new Error('Missing Telegram configuration');
+    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || !LOVABLE_API_KEY) {
+      throw new Error('Missing configuration');
     }
 
     // Random degen meme descriptions
@@ -51,19 +52,56 @@ Deno.serve(async (req) => {
 
     const randomDescription = memeDescriptions[Math.floor(Math.random() * memeDescriptions.length)];
     
-    const message = `/generate ${randomDescription}\n\n#MEMETROPOLIS`;
+    console.log('Generating meme with prompt:', randomDescription);
 
-    console.log('Posting BotslyAI meme description:', message);
+    // Call Lovable AI to generate the image
+    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash-image-preview',
+        messages: [
+          {
+            role: 'user',
+            content: randomDescription
+          }
+        ],
+        modalities: ['image', 'text']
+      }),
+    });
+
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      throw new Error(`AI API error: ${aiResponse.status} - ${errorText}`);
+    }
+
+    const aiData = await aiResponse.json();
+    const imageUrl = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+
+    if (!imageUrl) {
+      throw new Error('No image generated');
+    }
+
+    console.log('Image generated successfully');
+
+    // Convert base64 to binary
+    const base64Data = imageUrl.replace(/^data:image\/\w+;base64,/, '');
+    const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+
+    // Post image to Telegram
+    const formData = new FormData();
+    formData.append('chat_id', TELEGRAM_CHAT_ID);
+    formData.append('photo', new Blob([binaryData], { type: 'image/png' }), 'meme.png');
+    formData.append('caption', `${randomDescription}\n\n#MEMETROPOLIS`);
 
     const telegramResponse = await fetch(
-      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: TELEGRAM_CHAT_ID,
-          text: message,
-        }),
+        body: formData,
       }
     );
 
@@ -76,7 +114,7 @@ Deno.serve(async (req) => {
     console.log('Posted successfully:', result);
 
     return new Response(
-      JSON.stringify({ success: true, message: 'Meme description posted' }),
+      JSON.stringify({ success: true, message: 'Meme generated and posted' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

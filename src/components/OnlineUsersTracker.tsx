@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { formatDistanceToNow } from "date-fns";
 
 interface OnlineUser {
   id: string;
@@ -9,6 +10,7 @@ interface OnlineUser {
   first_name: string | null;
   is_online: boolean;
   last_active_at: string | null;
+  online_status_updated_at: string | null;
 }
 
 export const OnlineUsersTracker = () => {
@@ -35,19 +37,23 @@ export const OnlineUsersTracker = () => {
   }, []);
 
   const fetchUsers = async () => {
+    // Get users who sent messages in the last 10 minutes (considered online)
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    
     const { data: online } = await supabase
       .from('telegram_users')
-      .select('id, username, first_name, is_online, last_active_at')
+      .select('id, username, first_name, is_online, last_active_at, online_status_updated_at')
       .eq('is_online', true)
-      .order('last_active_at', { ascending: false });
+      .gte('online_status_updated_at', tenMinutesAgo)
+      .order('online_status_updated_at', { ascending: false });
 
     const { data: offline } = await supabase
       .from('telegram_users')
-      .select('id, username, first_name, is_online, last_active_at')
-      .eq('is_online', false)
+      .select('id, username, first_name, is_online, last_active_at, online_status_updated_at')
+      .or(`is_online.eq.false,online_status_updated_at.lt.${tenMinutesAgo}`)
       .not('last_active_at', 'is', null)
       .order('last_active_at', { ascending: false })
-      .limit(50);
+      .limit(100);
 
     setOnlineUsers(online || []);
     setOfflineUsers(offline || []);
@@ -62,13 +68,26 @@ export const OnlineUsersTracker = () => {
             <Badge variant="default">{onlineUsers.length}</Badge>
           </CardTitle>
         </CardHeader>
-        <CardContent className="max-h-96 overflow-y-auto">
-          {onlineUsers.map(user => (
-            <div key={user.id} className="flex items-center justify-between py-2 border-b">
-              <span>{user.username || user.first_name || 'Unknown'}</span>
-              <Badge variant="default" className="bg-green-500">Online</Badge>
-            </div>
-          ))}
+        <CardContent className="max-h-96 overflow-y-auto space-y-2">
+          {onlineUsers.length === 0 ? (
+            <p className="text-muted-foreground text-sm">No users currently active</p>
+          ) : (
+            onlineUsers.map(user => (
+              <div key={user.id} className="flex items-center justify-between py-2 border-b last:border-0">
+                <div className="flex flex-col">
+                  <span className="font-medium">{user.username || user.first_name || 'Unknown'}</span>
+                  {user.online_status_updated_at && (
+                    <span className="text-xs text-muted-foreground">
+                      Active {formatDistanceToNow(new Date(user.online_status_updated_at), { addSuffix: true })}
+                    </span>
+                  )}
+                </div>
+                <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                  <span className="mr-1">●</span> Online
+                </Badge>
+              </div>
+            ))
+          )}
         </CardContent>
       </Card>
 
@@ -79,13 +98,24 @@ export const OnlineUsersTracker = () => {
             <Badge variant="secondary">{offlineUsers.length}</Badge>
           </CardTitle>
         </CardHeader>
-        <CardContent className="max-h-96 overflow-y-auto">
-          {offlineUsers.map(user => (
-            <div key={user.id} className="flex items-center justify-between py-2 border-b">
-              <span>{user.username || user.first_name || 'Unknown'}</span>
-              <Badge variant="secondary">Offline</Badge>
-            </div>
-          ))}
+        <CardContent className="max-h-96 overflow-y-auto space-y-2">
+          {offlineUsers.length === 0 ? (
+            <p className="text-muted-foreground text-sm">No recent activity</p>
+          ) : (
+            offlineUsers.map(user => (
+              <div key={user.id} className="flex items-center justify-between py-2 border-b last:border-0">
+                <div className="flex flex-col">
+                  <span className="font-medium">{user.username || user.first_name || 'Unknown'}</span>
+                  {user.last_active_at && (
+                    <span className="text-xs text-muted-foreground">
+                      Last seen {formatDistanceToNow(new Date(user.last_active_at), { addSuffix: true })}
+                    </span>
+                  )}
+                </div>
+                <Badge variant="secondary">Offline</Badge>
+              </div>
+            ))
+          )}
         </CardContent>
       </Card>
     </div>

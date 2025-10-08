@@ -34,7 +34,7 @@ serve(async (req) => {
     const lastName = message.from.last_name || '';
     const messageText = message.text || message.caption || '';
 
-    // Upsert user
+    // Upsert user and mark as online when they send a message
     const { data: userData, error: userError } = await supabase
       .from('telegram_users')
       .upsert({
@@ -42,7 +42,9 @@ serve(async (req) => {
         username,
         first_name: firstName,
         last_name: lastName,
-        last_active_at: new Date().toISOString()
+        last_active_at: new Date().toISOString(),
+        is_online: true,
+        online_status_updated_at: new Date().toISOString()
       }, {
         onConflict: 'telegram_id',
         ignoreDuplicates: false

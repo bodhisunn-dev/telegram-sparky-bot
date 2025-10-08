@@ -29,3 +29,9 @@ verify_jwt = false
 
 [functions.engage-users]
 verify_jwt = false
+
+[functions.bulk-import-users]
+verify_jwt = false
+
+[functions.botsly-meme-post]
+verify_jwt = false

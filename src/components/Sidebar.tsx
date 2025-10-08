@@ -30,7 +30,7 @@ const Sidebar = ({
         <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-accent">
           <Bot className="w-6 h-6 text-primary-foreground" />
         </div>
-        <span className="font-bold text-xl">BOTSLY AI</span>
+        <span className="font-bold text-xl">Botsly AI </span>
       </div>
 
       <nav className="space-y-2">

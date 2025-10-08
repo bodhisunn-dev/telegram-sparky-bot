@@ -1,3 +1,5 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -12,10 +14,14 @@ Deno.serve(async (req) => {
     const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
     const TELEGRAM_CHAT_ID = Deno.env.get('TELEGRAM_CHAT_ID');
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || !LOVABLE_API_KEY) {
+    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || !LOVABLE_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       throw new Error('Missing configuration');
     }
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Random degen meme descriptions
     const memeDescriptions = [
@@ -50,9 +56,25 @@ Deno.serve(async (req) => {
       "When someone FUDs your bags 😤\n→ Angry NPC wojak pointing and screaming"
     ];
 
-    const randomDescription = memeDescriptions[Math.floor(Math.random() * memeDescriptions.length)];
+    // Get last used description to avoid repetition
+    const { data: lastState } = await supabase
+      .from('bot_state')
+      .select('value')
+      .eq('id', 'last_meme_description')
+      .single();
+
+    const lastDescription = lastState?.value || '';
+    
+    // Filter out the last description and select a new one
+    const availableDescriptions = memeDescriptions.filter(desc => desc !== lastDescription);
+    const randomDescription = availableDescriptions[Math.floor(Math.random() * availableDescriptions.length)];
     
     console.log('Generating meme with prompt:', randomDescription);
+
+    // Update the last used description
+    await supabase
+      .from('bot_state')
+      .upsert({ id: 'last_meme_description', value: randomDescription, updated_at: new Date().toISOString() });
 
     // Call Lovable AI to generate the image
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {

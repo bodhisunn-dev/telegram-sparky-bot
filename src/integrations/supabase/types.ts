@@ -56,6 +56,24 @@ export type Database = {
         }
         Relationships: []
       }
+      bot_state: {
+        Row: {
+          id: string
+          updated_at: string | null
+          value: string
+        }
+        Insert: {
+          id: string
+          updated_at?: string | null
+          value: string
+        }
+        Update: {
+          id?: string
+          updated_at?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           chat_id: number

@@ -20,36 +20,41 @@ import { TestBotslyMemePost } from "@/components/TestBotslyMemePost";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const { data: metrics, isLoading } = useDashboardMetrics();
-  const { toast } = useToast();
-
+  const {
+    data: metrics,
+    isLoading
+  } = useDashboardMetrics();
+  const {
+    toast
+  } = useToast();
   useEffect(() => {
     const checkAdminStatus = async (userId: string) => {
-      const { data, error } = await supabase
-        .from('admin_users')
-        .select('user_id')
-        .eq('user_id', userId)
-        .maybeSingle();
-      
+      const {
+        data,
+        error
+      } = await supabase.from('admin_users').select('user_id').eq('user_id', userId).maybeSingle();
       setIsAdmin(!!data && !error);
     };
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({
+      data: {
+        session
+      }
+    }) => {
       setSession(session);
       if (session?.user?.id) {
         checkAdminStatus(session.user.id);
       }
       setLoading(false);
     });
-
     const {
-      data: { subscription },
+      data: {
+        subscription
+      }
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session?.user?.id) {
@@ -58,36 +63,28 @@ const Index = () => {
         setIsAdmin(null);
       }
     });
-
     return () => subscription.unsubscribe();
   }, []);
-
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     toast({
       title: "Signed out",
-      description: "You have been signed out successfully.",
+      description: "You have been signed out successfully."
     });
   };
-
-  if (loading || (session && isAdmin === null)) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+  if (loading || session && isAdmin === null) {
+    return <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center space-y-4">
           <Bot className="w-16 h-16 mx-auto text-primary animate-pulse" />
           <p className="text-muted-foreground">Loading...</p>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   if (!session) {
     return <Auth />;
   }
-
   if (isAdmin === false) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+    return <div className="flex min-h-screen items-center justify-center bg-background">
         <Card className="max-w-md border-border">
           <CardHeader className="text-center">
             <Bot className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
@@ -102,12 +99,9 @@ const Index = () => {
             </Button>
           </CardContent>
         </Card>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="flex min-h-screen bg-background">
+  return <div className="flex min-h-screen bg-background">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       
       <main className="flex-1 p-8 ml-64">
@@ -120,18 +114,11 @@ const Index = () => {
                   <Bot className="w-8 h-8 text-primary-foreground" />
                 </div>
                 <div>
-                  <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                    Telegram AI Bot Dashboard
-                  </h1>
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Botsly AI Bot Dashboard</h1>
                   <p className="text-muted-foreground">Monitor and control your AI-powered Telegram bot</p>
                 </div>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSignOut}
-                className="gap-2"
-              >
+              <Button variant="outline" size="sm" onClick={handleSignOut} className="gap-2">
                 <LogOut className="w-4 h-4" />
                 Sign Out
               </Button>
@@ -150,34 +137,10 @@ const Index = () => {
             <TabsContent value="dashboard" className="space-y-6">
               {/* Metrics Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <MetricCard
-                  title="Total Users"
-                  value={isLoading ? "..." : metrics?.totalUsers.toString() || "0"}
-                  change="Real-time"
-                  icon={Users}
-                  trend="up"
-                />
-                <MetricCard
-                  title="Messages Today"
-                  value={isLoading ? "..." : metrics?.messagesToday.toString() || "0"}
-                  change="Real-time"
-                  icon={MessageSquare}
-                  trend="up"
-                />
-                <MetricCard
-                  title="Active Conversations"
-                  value={isLoading ? "..." : metrics?.activeConversations.toString() || "0"}
-                  change="Last 24h"
-                  icon={Activity}
-                  trend="up"
-                />
-                <MetricCard
-                  title="Images Generated"
-                  value={isLoading ? "..." : metrics?.imagesGenerated.toString() || "0"}
-                  change="All time"
-                  icon={Sparkles}
-                  trend="up"
-                />
+                <MetricCard title="Total Users" value={isLoading ? "..." : metrics?.totalUsers.toString() || "0"} change="Real-time" icon={Users} trend="up" />
+                <MetricCard title="Messages Today" value={isLoading ? "..." : metrics?.messagesToday.toString() || "0"} change="Real-time" icon={MessageSquare} trend="up" />
+                <MetricCard title="Active Conversations" value={isLoading ? "..." : metrics?.activeConversations.toString() || "0"} change="Last 24h" icon={Activity} trend="up" />
+                <MetricCard title="Images Generated" value={isLoading ? "..." : metrics?.imagesGenerated.toString() || "0"} change="All time" icon={Sparkles} trend="up" />
               </div>
 
               {/* Activity Overview */}
@@ -249,8 +212,6 @@ const Index = () => {
           </Tabs>
         </div>
       </main>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;

@@ -19,6 +19,12 @@ serve(async (req) => {
     const update = await req.json();
     console.log('Received Telegram update:', JSON.stringify(update, null, 2));
 
+    // Define allowed chat IDs
+    const ALLOWED_CHAT_IDS = [
+      -1002342027931, // MEMETROPOLIS - GLOBAL CHAT
+      // Add founders chat ID here when provided
+    ];
+
     // Extract message data
     const message = update.message || update.edited_message;
     if (!message) {
@@ -28,6 +34,14 @@ serve(async (req) => {
     }
 
     const chatId = message.chat.id;
+
+    // Check if chat is allowed
+    if (!ALLOWED_CHAT_IDS.includes(chatId)) {
+      console.log(`⛔ Unauthorized chat ID: ${chatId} - Bot only works in Memetropolis groups`);
+      return new Response(JSON.stringify({ ok: true, message: 'Unauthorized chat' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
     const telegramUserId = message.from.id;
     const username = message.from.username || '';
     const firstName = message.from.first_name || '';

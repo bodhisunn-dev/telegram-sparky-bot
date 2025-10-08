@@ -16,7 +16,7 @@ const UserLeaderboard = ({ expanded = false }: UserLeaderboardProps) => {
         .select('*')
         .order('engagement_score', { ascending: false })
         .order('message_count', { ascending: false })
-        .limit(expanded ? 100 : 5);
+        .limit(expanded ? 1000 : 5);
       
       if (error) throw error;
       return data.map((user, index) => ({

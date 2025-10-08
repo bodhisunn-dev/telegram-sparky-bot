@@ -17,6 +17,7 @@ import { TestDailyGM } from "@/components/TestDailyGM";
 import { TestTopActiveShoutout } from "@/components/TestTopActiveShoutout";
 import { BulkUserImport } from "@/components/BulkUserImport";
 import { TestBotslyMemePost } from "@/components/TestBotslyMemePost";
+import { OnlineUsersTracker } from "@/components/OnlineUsersTracker";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -169,6 +170,9 @@ const Index = () => {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Online/Offline Users */}
+              <OnlineUsersTracker />
             </TabsContent>
 
             <TabsContent value="users">

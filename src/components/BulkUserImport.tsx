@@ -26,22 +26,42 @@ export const BulkUserImport = () => {
     for (let i = 1; i < lines.length; i++) {
       if (!lines[i].trim()) continue;
       
-      const values = lines[i].split(',');
+      // Split by comma but handle quoted values
+      const values = lines[i].match(/(".*?"|[^,]+)(?=\s*,|\s*$)/g)?.map(v => v.replace(/^"(.*)"$/, '$1').trim()) || [];
       const user: any = {};
       
       headers.forEach((header, index) => {
         const value = values[index]?.trim();
+        if (!value) return;
+        
+        // Handle telegram_id (ID column)
         if (header === 'telegram_id' || header === 'id' || header === 'user_id') {
-          user.telegram_id = parseInt(value);
-        } else if (header === 'username') {
-          user.username = value;
-        } else if (header === 'first_name' || header === 'firstname') {
-          user.first_name = value;
-        } else if (header === 'last_name' || header === 'lastname') {
-          user.last_name = value;
+          const parsedId = parseInt(value);
+          if (!isNaN(parsedId)) {
+            user.telegram_id = parsedId;
+          }
+        } 
+        // Handle username
+        else if (header === 'username') {
+          if (value && value !== '') {
+            user.username = value;
+          }
+        } 
+        // Handle first name
+        else if (header === 'first name' || header === 'first_name' || header === 'firstname') {
+          if (value && value !== '') {
+            user.first_name = value;
+          }
+        } 
+        // Handle last name
+        else if (header === 'last name' || header === 'last_name' || header === 'lastname') {
+          if (value && value !== '') {
+            user.last_name = value;
+          }
         }
       });
       
+      // Only add if we have a valid telegram_id and it's not a bot
       if (user.telegram_id) {
         users.push(user);
       }

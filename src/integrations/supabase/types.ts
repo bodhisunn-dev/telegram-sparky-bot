@@ -121,9 +121,11 @@ export type Database = {
           engagement_score: number | null
           first_name: string | null
           id: string
+          is_online: boolean | null
           last_active_at: string | null
           last_name: string | null
           message_count: number | null
+          online_status_updated_at: string | null
           telegram_id: number
           username: string | null
         }
@@ -132,9 +134,11 @@ export type Database = {
           engagement_score?: number | null
           first_name?: string | null
           id?: string
+          is_online?: boolean | null
           last_active_at?: string | null
           last_name?: string | null
           message_count?: number | null
+          online_status_updated_at?: string | null
           telegram_id: number
           username?: string | null
         }
@@ -143,9 +147,11 @@ export type Database = {
           engagement_score?: number | null
           first_name?: string | null
           id?: string
+          is_online?: boolean | null
           last_active_at?: string | null
           last_name?: string | null
           message_count?: number | null
+          online_status_updated_at?: string | null
           telegram_id?: number
           username?: string | null
         }

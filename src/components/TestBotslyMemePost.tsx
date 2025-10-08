@@ -11,13 +11,16 @@ export const TestBotslyMemePost = () => {
   const handlePost = async () => {
     setIsPosting(true);
     try {
-      const { error } = await supabase.functions.invoke('botsly-meme-post');
+      console.log('Invoking botsly-meme-post function...');
+      const { data, error } = await supabase.functions.invoke('botsly-meme-post');
+      
+      console.log('Response:', { data, error });
       
       if (error) throw error;
       
       toast.success("BotslyAI meme description posted successfully!");
     } catch (error: any) {
-      console.error('Error:', error);
+      console.error('Full error:', error);
       toast.error(error.message || "Failed to post meme description");
     } finally {
       setIsPosting(false);

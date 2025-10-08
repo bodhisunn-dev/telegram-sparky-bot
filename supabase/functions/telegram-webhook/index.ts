@@ -22,7 +22,7 @@ serve(async (req) => {
     // Define allowed chat IDs
     const ALLOWED_CHAT_IDS = [
       -1002342027931, // MEMETROPOLIS - GLOBAL CHAT
-      // Add founders chat ID here when provided
+      -1002153480772, // FOUNDERS CHAT
     ];
 
     // Extract message data

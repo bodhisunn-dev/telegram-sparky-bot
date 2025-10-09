@@ -56,25 +56,28 @@ Deno.serve(async (req) => {
       "When someone FUDs your bags 😤\n→ Angry NPC wojak pointing and screaming"
     ];
 
-    // Get last used description to avoid repetition
+    // Get last 3 used descriptions to avoid repetition
     const { data: lastState } = await supabase
       .from('bot_state')
       .select('value')
       .eq('id', 'last_meme_description')
-      .single();
+      .maybeSingle();
 
-    const lastDescription = lastState?.value || '';
+    const lastDescriptions = lastState?.value ? JSON.parse(lastState.value) : [];
     
-    // Filter out the last description and select a new one
-    const availableDescriptions = memeDescriptions.filter(desc => desc !== lastDescription);
-    const randomDescription = availableDescriptions[Math.floor(Math.random() * availableDescriptions.length)];
+    // Filter out the last 3 descriptions and select a new one
+    const availableDescriptions = memeDescriptions.filter(desc => !lastDescriptions.includes(desc));
+    const randomDescription = availableDescriptions.length > 0 
+      ? availableDescriptions[Math.floor(Math.random() * availableDescriptions.length)]
+      : memeDescriptions[Math.floor(Math.random() * memeDescriptions.length)];
     
     console.log('Generating meme with prompt:', randomDescription);
 
-    // Update the last used description
+    // Update the last used descriptions (keep last 3)
+    const updatedHistory = [randomDescription, ...lastDescriptions].slice(0, 3);
     await supabase
       .from('bot_state')
-      .upsert({ id: 'last_meme_description', value: randomDescription, updated_at: new Date().toISOString() });
+      .upsert({ id: 'last_meme_description', value: JSON.stringify(updatedHistory), updated_at: new Date().toISOString() });
 
     // Call Lovable AI to generate the image
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {

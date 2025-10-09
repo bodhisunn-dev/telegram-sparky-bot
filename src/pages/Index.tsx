@@ -15,6 +15,7 @@ import { UploadMemetropolisVideo } from "@/components/UploadMemetropolisVideo";
 import { TestRandomFactPost } from "@/components/TestRandomFactPost";
 import { TestDailyGM } from "@/components/TestDailyGM";
 import { TestTopActiveShoutout } from "@/components/TestTopActiveShoutout";
+import { TestUserMentions } from "@/components/TestUserMentions";
 import { BulkUserImport } from "@/components/BulkUserImport";
 import { TestBotslyMemePost } from "@/components/TestBotslyMemePost";
 import { OnlineUsersTracker } from "@/components/OnlineUsersTracker";
@@ -204,6 +205,7 @@ const Index = () => {
                 <TestRandomFactPost />
                 <TestDailyGM />
               <TestTopActiveShoutout />
+              <TestUserMentions />
               <TestBotslyMemePost />
               <BulkUserImport />
                 <BotConfig />

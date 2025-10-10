@@ -177,8 +177,8 @@ serve(async (req) => {
       });
     }
 
-    // Handle /cancel command
-    if (messageText.startsWith('/cancel')) {
+    // Handle /no command to stop /all mentions
+    if (messageText.startsWith('/no')) {
       try {
         const { error: upsertError } = await supabase
           .from('bot_state')
@@ -196,7 +196,7 @@ serve(async (req) => {
         
         await sendTelegramMessage(chatId, '🛑 Cancelling @ all mentions...');
       } catch (error) {
-        console.error('Error in /cancel command:', error);
+        console.error('Error in /no command:', error);
         await sendTelegramMessage(chatId, '❌ Error cancelling mentions. Please try again.');
       }
       

@@ -177,6 +177,65 @@ serve(async (req) => {
       });
     }
 
+    // Handle /all command to mention all users
+    if (messageText.startsWith('/all')) {
+      const customMessage = messageText.replace('/all', '').trim();
+      
+      if (!customMessage) {
+        await sendTelegramMessage(chatId, '📢 Usage: /all [your message or link]\n\nExample: /all Check out this tweet! https://x.com/example');
+        return new Response(JSON.stringify({ ok: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Fetch all users
+      const { data: allUsers, error: usersError } = await supabase
+        .from('telegram_users')
+        .select('username, first_name')
+        .order('id', { ascending: true });
+
+      if (usersError) {
+        console.error('Error fetching users:', usersError);
+        await sendTelegramMessage(chatId, '❌ Error fetching users. Please try again.');
+        return new Response(JSON.stringify({ ok: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      if (!allUsers || allUsers.length === 0) {
+        await sendTelegramMessage(chatId, '📢 No users found to mention.');
+        return new Response(JSON.stringify({ ok: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Split users into batches of 10
+      const batchSize = 10;
+      const batches = [];
+      for (let i = 0; i < allUsers.length; i += batchSize) {
+        batches.push(allUsers.slice(i, i + batchSize));
+      }
+
+      // Send messages for each batch
+      for (const batch of batches) {
+        const mentions = batch
+          .map(user => user.username ? `@${user.username}` : user.first_name || 'User')
+          .join(' ');
+        
+        const message = `${customMessage}\n\n${mentions}`;
+        await sendTelegramMessage(chatId, message);
+        
+        // Add small delay between messages to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      await sendTelegramMessage(chatId, `✅ Mentioned all ${allUsers.length} users in ${batches.length} messages!`);
+      
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     // Handle top users command
     if (messageText.startsWith('/top')) {
       const { data: topUsers } = await supabase

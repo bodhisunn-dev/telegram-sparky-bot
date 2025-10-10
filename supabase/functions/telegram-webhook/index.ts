@@ -177,8 +177,8 @@ serve(async (req) => {
       });
     }
 
-    // Handle /stop command
-    if (messageText.startsWith('/stop')) {
+    // Handle /cancel command
+    if (messageText.startsWith('/cancel')) {
       try {
         const { error: upsertError } = await supabase
           .from('bot_state')
@@ -194,10 +194,10 @@ serve(async (req) => {
           console.error('Error updating stop flag:', upsertError);
         }
         
-        await sendTelegramMessage(chatId, '🛑 Stopping @ all mentions...');
+        await sendTelegramMessage(chatId, '🛑 Cancelling @ all mentions...');
       } catch (error) {
-        console.error('Error in /stop command:', error);
-        await sendTelegramMessage(chatId, '❌ Error stopping mentions. Please try again.');
+        console.error('Error in /cancel command:', error);
+        await sendTelegramMessage(chatId, '❌ Error cancelling mentions. Please try again.');
       }
       
       return new Response(JSON.stringify({ ok: true }), {

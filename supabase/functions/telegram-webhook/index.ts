@@ -181,8 +181,13 @@ serve(async (req) => {
     if (messageText.startsWith('/stop')) {
       await supabase
         .from('bot_state')
-        .update({ stop_all_mentions: true })
-        .eq('id', 1);
+        .upsert({ 
+          id: 'stop_flag',
+          value: 'true',
+          stop_all_mentions: true 
+        }, {
+          onConflict: 'id'
+        });
       
       await sendTelegramMessage(chatId, '🛑 Stopping @ all mentions...');
       
@@ -205,8 +210,13 @@ serve(async (req) => {
       // Reset stop flag at start
       await supabase
         .from('bot_state')
-        .update({ stop_all_mentions: false })
-        .eq('id', 1);
+        .upsert({ 
+          id: 'stop_flag',
+          value: 'false',
+          stop_all_mentions: false 
+        }, {
+          onConflict: 'id'
+        });
 
       // Fetch all users
       const { data: allUsers, error: usersError } = await supabase
@@ -243,8 +253,8 @@ serve(async (req) => {
         const { data: state } = await supabase
           .from('bot_state')
           .select('stop_all_mentions')
-          .eq('id', 1)
-          .single();
+          .eq('id', 'stop_flag')
+          .maybeSingle();
         
         if (state?.stop_all_mentions) {
           await sendTelegramMessage(chatId, `🛑 Stopped after mentioning ${messagesSent * batchSize} users.`);

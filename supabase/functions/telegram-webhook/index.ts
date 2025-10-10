@@ -177,6 +177,20 @@ serve(async (req) => {
       });
     }
 
+    // Handle /stop command
+    if (messageText.startsWith('/stop')) {
+      await supabase
+        .from('bot_state')
+        .update({ stop_all_mentions: true })
+        .eq('id', 1);
+      
+      await sendTelegramMessage(chatId, '🛑 Stopping @ all mentions...');
+      
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     // Handle /all command to mention all users
     if (messageText.startsWith('/all')) {
       const customMessage = messageText.replace('/all', '').trim();
@@ -187,6 +201,12 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
+
+      // Reset stop flag at start
+      await supabase
+        .from('bot_state')
+        .update({ stop_all_mentions: false })
+        .eq('id', 1);
 
       // Fetch all users
       const { data: allUsers, error: usersError } = await supabase
@@ -217,13 +237,29 @@ serve(async (req) => {
       }
 
       // Send messages for each batch
+      let messagesSent = 0;
       for (const batch of batches) {
+        // Check if stop was requested
+        const { data: state } = await supabase
+          .from('bot_state')
+          .select('stop_all_mentions')
+          .eq('id', 1)
+          .single();
+        
+        if (state?.stop_all_mentions) {
+          await sendTelegramMessage(chatId, `🛑 Stopped after mentioning ${messagesSent * batchSize} users.`);
+          return new Response(JSON.stringify({ ok: true }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
         const mentions = batch
           .map(user => user.username ? `@${user.username}` : user.first_name || 'User')
           .join(' ');
         
         const message = `${customMessage}\n\n${mentions}`;
         await sendTelegramMessage(chatId, message);
+        messagesSent++;
         
         // Add small delay between messages to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 1000));

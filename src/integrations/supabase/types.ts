@@ -59,16 +59,19 @@ export type Database = {
       bot_state: {
         Row: {
           id: string
+          stop_all_mentions: boolean | null
           updated_at: string | null
           value: string
         }
         Insert: {
           id: string
+          stop_all_mentions?: boolean | null
           updated_at?: string | null
           value: string
         }
         Update: {
           id?: string
+          stop_all_mentions?: boolean | null
           updated_at?: string | null
           value?: string
         }

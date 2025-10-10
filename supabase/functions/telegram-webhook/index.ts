@@ -179,17 +179,26 @@ serve(async (req) => {
 
     // Handle /stop command
     if (messageText.startsWith('/stop')) {
-      await supabase
-        .from('bot_state')
-        .upsert({ 
-          id: 'stop_flag',
-          value: 'true',
-          stop_all_mentions: true 
-        }, {
-          onConflict: 'id'
-        });
-      
-      await sendTelegramMessage(chatId, '🛑 Stopping @ all mentions...');
+      try {
+        const { error: upsertError } = await supabase
+          .from('bot_state')
+          .upsert({ 
+            id: 'stop_flag',
+            value: 'true',
+            stop_all_mentions: true 
+          }, {
+            onConflict: 'id'
+          });
+        
+        if (upsertError) {
+          console.error('Error updating stop flag:', upsertError);
+        }
+        
+        await sendTelegramMessage(chatId, '🛑 Stopping @ all mentions...');
+      } catch (error) {
+        console.error('Error in /stop command:', error);
+        await sendTelegramMessage(chatId, '❌ Error stopping mentions. Please try again.');
+      }
       
       return new Response(JSON.stringify({ ok: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -200,12 +209,16 @@ serve(async (req) => {
     if (messageText.startsWith('/all')) {
       const customMessage = messageText.replace('/all', '').trim();
       
+      console.log('Processing /all command with message:', customMessage);
+      
       if (!customMessage) {
         await sendTelegramMessage(chatId, '📢 Usage: /all [your message or link]\n\nExample: /all Check out this tweet! https://x.com/example');
         return new Response(JSON.stringify({ ok: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
+      
+      try {
 
       // Reset stop flag at start
       await supabase
@@ -276,6 +289,10 @@ serve(async (req) => {
       }
 
       await sendTelegramMessage(chatId, `✅ Mentioned all ${allUsers.length} users in ${batches.length} messages!`);
+      } catch (error) {
+        console.error('Error in /all command:', error);
+        await sendTelegramMessage(chatId, '❌ Error mentioning users. Please try again.');
+      }
       
       return new Response(JSON.stringify({ ok: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

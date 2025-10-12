@@ -23,40 +23,100 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Random degen meme descriptions
+    // Random degen meme descriptions with variety
     const memeDescriptions = [
-      "When you ape into a coin at ATH and it immediately dumps 50% 📉\n→ Split panel: left = \"This is fine\" dog in flames / right = wallet showing -69%",
+      "When you ape into a coin at ATH and it immediately dumps 50% 📉\n→ Split panel meme: left shows 'This is fine' dog in flames, right shows wallet with -69%",
       
-      "POV: You're explaining your crypto losses to your wife 💀\n→ Guy sweating with two buttons: \"Tell the truth\" vs \"Say it's a long-term hold\"",
+      "POV: You're explaining your crypto losses to your wife 💀\n→ Sweating guy choosing between two buttons: 'Tell the truth' vs 'Say it's a long-term hold'",
       
-      "That feeling when you wake up to green candles 📈\n→ Leonardo DiCaprio laughing and pointing at the chart",
+      "That feeling when you wake up to green candles 📈\n→ Leonardo DiCaprio laughing hysterically and pointing at chart going up",
       
-      "Me checking my portfolio every 5 seconds like it's gonna change 🤡\n→ Obsessive boyfriend meme but it's checking CMC",
+      "Me checking my portfolio every 5 seconds like it's gonna change 🤡\n→ Obsessive boyfriend meme but he's checking CoinMarketCap",
       
-      "When someone asks if I'm still holding that coin from 2021 💎\n→ Skeleton waiting at computer, caption: \"Still staking\"",
+      "When someone asks if I'm still holding that coin from 2021 💎\n→ Skeleton sitting at computer desk, caption: 'Still staking bro'",
       
-      "Crypto Twitter be like: \"WAGMI\" while losing everything 🚀\n→ House on fire meme: \"This is fine, we're all gonna make it\"",
+      "Crypto Twitter be like: 'WAGMI' while losing everything 🚀\n→ House completely on fire meme: 'This is fine, we're all gonna make it'",
       
-      "When you FOMO into a pump and it dumps the second you buy 🎪\n→ Clown putting on makeup in stages",
+      "When you FOMO into a pump and it dumps the second you buy 🎪\n→ Clown applying makeup in progressive stages, getting more ridiculous",
       
-      "POV: You're diversifying into 50 different shitcoins 🎲\n→ Guy with math equations floating around, caption: \"Risk management\"",
+      "POV: You're diversifying into 50 different shitcoins 🎲\n→ Math equations floating around confused guy's head, caption: 'Risk management'",
       
-      "That one coin in your portfolio carrying everything 💪\n→ Strong Spongebob carrying weak Spongebob (rest of portfolio)",
+      "That one coin in your portfolio carrying everything 💪\n→ Buff Spongebob carrying weak Spongebob labeled 'rest of portfolio'",
       
-      "When you ape the presale at 3am with zero DYOR 🌙\n→ Split-screen: top = serious \"I will research next time\" / bottom = \"buys because logo looks cool\"",
+      "When you ape the presale at 3am with zero DYOR 🌙\n→ Split panel: top = serious face 'I will research next time', bottom = 'buys because logo looks cool'",
       
-      "Checking charts during Thanksgiving dinner be like 📊\n→ Woman yelling at cat meme, but cat is looking at charts",
+      "Checking charts during Thanksgiving dinner be like 📊\n→ Woman yelling at confused cat, but cat is staring at price charts",
       
-      "When the dev says \"trust the process\" for the 47th time 🙏\n→ Disappointed cricket fan meme",
+      "When the dev says 'trust the process' for the 47th time 🙏\n→ Disappointed cricket fan with thousand-yard stare",
       
-      "Me pretending I understand tokenomics in the voice chat 🧠\n→ Homer Simpson backing into bushes",
+      "Me pretending I understand tokenomics in the voice chat 🧠\n→ Homer Simpson slowly backing into hedge bushes",
       
-      "That feeling when you find a 1000x gem... in your dream 😴\n→ Waking up meme: \"It was all a dream\"",
+      "That feeling when you find a 1000x gem... in your dream 😴\n→ Waking up sweating meme: 'It was all a dream, the coin doesn't exist'",
       
-      "When someone FUDs your bags 😤\n→ Angry NPC wojak pointing and screaming"
+      "When someone FUDs your bags 😤\n→ Angry NPC wojak with veins popping, pointing and screaming",
+      
+      "That moment you realize you bought the wrong token 🤦\n→ Dramatic zoom on guy's face realizing his mistake, caption: 'Wrong address'",
+      
+      "When the whale dumps right after you buy in 🐋\n→ Titanic sinking but it's labeled 'my portfolio'",
+      
+      "POV: The dev team goes silent for 3 days 👻\n→ Nervous sweating Jordan Peele looking around suspiciously",
+      
+      "Me after doing 5 minutes of research: 'Yeah I'm basically an expert' 🎓\n→ Brain expanding galaxy meme but ironically small brain",
+      
+      "When you time the bottom perfectly for once 🎯\n→ Wolf of Wall Street chest pump celebration, caption: 'Bought the dip'",
+      
+      "My portfolio during a bear market 📉\n→ Disaster girl smiling in front of burning house labeled 'my bags'",
+      
+      "When you see your coin pumping but you sold yesterday 😭\n→ Crying behind mask meme, trying to act happy for others",
+      
+      "Explaining blockchain to your grandma 👵\n→ Charlie Day conspiracy board meme with red strings everywhere",
+      
+      "When gas fees cost more than your transaction 💸\n→ Angry keyboard slam meme, Ethereum logo in background",
+      
+      "POV: You're in a telegram group asking 'wen moon' 🌙\n→ Patrick Star asking 'Is mayonnaise an instrument?'",
+      
+      "That one guy who bought Bitcoin in 2010 🏆\n→ Gigachad sitting on throne made of gold, caption: 'Meanwhile the pizza guy'",
+      
+      "When you finally understand what a liquidity pool is 💡\n→ Monkey puppet side-eye meme, caption: 'Wait, I can lose money both ways?'",
+      
+      "Me watching my coin do a 10x after I sold 📈\n→ Elmo on fire gif, internal screaming face",
+      
+      "When the audit comes back clean but price still dumps 📊\n→ Confused Nick Young face with question marks",
+      
+      "POV: You're explaining why you're still bullish down 80% 🎪\n→ Guy with straight face lying meme: 'It's just a healthy correction'",
+      
+      "When you accidentally send to wrong wallet address 💀\n→ Dramatic anime character reaching out as coins disappear into void",
+      
+      "That feeling when airdrop is actually worth something 🎁\n→ Surprised Pikachu face but extremely exaggerated",
+      
+      "Me acting like I knew it would pump all along 🤓\n→ Squidward looking through blinds at Spongebob having fun",
+      
+      "When stable coin depegs and you're 100x leveraged ⚡\n→ Mr. Krabs having Vietnam flashback, sweating profusely",
+      
+      "POV: You're the exit liquidity again 💧\n→ Distracted boyfriend meme: boyfriend=whales, girlfriend=exit liquidity, other girl=you",
+      
+      "When someone asks if crypto is a scam 🎭\n→ Two button choice meme: 'Explain fundamentals' vs 'Just say HFSP'",
+      
+      "My face when I see 'Protocol X is a revolutionary DeFi innovation' 🙄\n→ Roll Safe thinking guy tapping head, caption: 'It's a fork of a fork'",
+      
+      "When you're trying to buy the dip but it keeps dipping 📉\n→ Dominoes falling endlessly meme labeled with buy orders",
+      
+      "POV: Gas prices are higher than your portfolio value ⛽\n→ Man looking at butterfly: 'Is this financial freedom?'",
+      
+      "When your coin gets listed on a major exchange 🚀\n→ Excited seal clapping aggressively, caption: 'Finally!'",
+      
+      "Me calculating profits before even buying 💰\n→ Person pointing at math on whiteboard but it's all wrong, caption: 'Lambo calculator'",
+      
+      "When you see 'Not financial advice' after 50 paragraphs of advice 📝\n→ Drake no/yes meme: No to 'seeking professional advice', Yes to 'trusting CT anon'",
+      
+      "That guy who says 'I told you so' after every pump 📢\n→ Armchair expert meme guy, caption: 'I called it' (narrator: he didn't)",
+      
+      "When you realize you've been staking the wrong token for 6 months 🔐\n→ Shocked face meme with hands on cheeks, existential crisis setting in",
+      
+      "POV: Another day of losing money you don't have 💸\n→ Pepe the frog sad face in rain, holding empty wallet"
     ];
 
-    // Get last 3 used descriptions to avoid repetition
+    // Get last 15 used descriptions to avoid repetition
     const { data: lastState } = await supabase
       .from('bot_state')
       .select('value')
@@ -75,7 +135,7 @@ Deno.serve(async (req) => {
       lastDescriptions = [];
     }
     
-    // Filter out the last 3 descriptions and select a new one
+    // Filter out the last 15 descriptions and select a new one
     const availableDescriptions = memeDescriptions.filter(desc => !lastDescriptions.includes(desc));
     const randomDescription = availableDescriptions.length > 0 
       ? availableDescriptions[Math.floor(Math.random() * availableDescriptions.length)]
@@ -83,8 +143,8 @@ Deno.serve(async (req) => {
     
     console.log('Generating meme with prompt:', randomDescription);
 
-    // Update the last used descriptions (keep last 3)
-    const updatedHistory = [randomDescription, ...lastDescriptions].slice(0, 3);
+    // Update the last used descriptions (keep last 15)
+    const updatedHistory = [randomDescription, ...lastDescriptions].slice(0, 15);
     await supabase
       .from('bot_state')
       .upsert({ id: 'last_meme_description', value: JSON.stringify(updatedHistory), updated_at: new Date().toISOString() });

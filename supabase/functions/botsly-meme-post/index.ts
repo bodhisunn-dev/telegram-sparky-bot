@@ -63,7 +63,17 @@ Deno.serve(async (req) => {
       .eq('id', 'last_meme_description')
       .maybeSingle();
 
-    const lastDescriptions = lastState?.value ? JSON.parse(lastState.value) : [];
+    let lastDescriptions: string[] = [];
+    try {
+      lastDescriptions = lastState?.value ? JSON.parse(lastState.value) : [];
+      // Ensure it's an array
+      if (!Array.isArray(lastDescriptions)) {
+        lastDescriptions = [];
+      }
+    } catch (e) {
+      console.log('Error parsing last descriptions, resetting:', e);
+      lastDescriptions = [];
+    }
     
     // Filter out the last 3 descriptions and select a new one
     const availableDescriptions = memeDescriptions.filter(desc => !lastDescriptions.includes(desc));

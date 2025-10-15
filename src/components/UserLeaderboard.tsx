@@ -26,6 +26,7 @@ const UserLeaderboard = ({ expanded = false }: UserLeaderboardProps) => {
         engagement: user.engagement_score || 0,
       }));
     },
+    refetchInterval: 86400000, // Refresh every 24 hours
   });
 
   if (isLoading) {

@@ -70,13 +70,27 @@ serve(async (req) => {
       console.error('Error upserting user:', userError);
     }
 
-    // Update message count
+    // Update message count and calculate engagement score
     if (userData) {
+      const newMessageCount = (userData.message_count || 0) + 1;
+      
+      // Get total messages in chat for engagement calculation
+      const { count: totalMessages } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('chat_id', chatId);
+      
+      // Calculate engagement as percentage: (user messages / total messages) * 100
+      // Capped at 100%
+      const engagementScore = totalMessages && totalMessages > 0 
+        ? Math.min(Math.round((newMessageCount / totalMessages) * 100), 100)
+        : 0;
+      
       await supabase
         .from('telegram_users')
         .update({
-          message_count: (userData.message_count || 0) + 1,
-          engagement_score: (userData.engagement_score || 0) + 1
+          message_count: newMessageCount,
+          engagement_score: engagementScore
         })
         .eq('id', userData.id);
     }

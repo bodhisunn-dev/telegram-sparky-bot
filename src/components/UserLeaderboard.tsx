@@ -11,19 +11,45 @@ const UserLeaderboard = ({ expanded = false }: UserLeaderboardProps) => {
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['telegram-users-leaderboard'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('telegram_users')
-        .select('*')
-        .order('engagement_score', { ascending: false })
-        .order('message_count', { ascending: false })
-        .limit(expanded ? 1000 : 5);
+      // Get messages from last 24 hours
+      const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
       
-      if (error) throw error;
-      return data.map((user, index) => ({
+      // Get users who have been active in last 24 hours with their message counts
+      const { data: activeUsers, error: usersError } = await supabase
+        .from('telegram_users')
+        .select('id, telegram_id, first_name, last_name, username, last_active_at')
+        .gte('last_active_at', last24Hours);
+      
+      if (usersError) throw usersError;
+      if (!activeUsers || activeUsers.length === 0) return [];
+      
+      // Get message counts for each user in last 24 hours
+      const userStatsPromises = activeUsers.map(async (user) => {
+        const { count } = await supabase
+          .from('messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('telegram_user_id', user.id)
+          .gte('created_at', last24Hours);
+        
+        return {
+          ...user,
+          message_count_24h: count || 0
+        };
+      });
+      
+      const usersWithStats = await Promise.all(userStatsPromises);
+      
+      // Filter out users with 0 messages and sort by message count
+      const sortedUsers = usersWithStats
+        .filter(user => user.message_count_24h > 0)
+        .sort((a, b) => b.message_count_24h - a.message_count_24h)
+        .slice(0, expanded ? 1000 : 5);
+      
+      return sortedUsers.map((user, index) => ({
         rank: index + 1,
         name: user.first_name || user.username || 'Anonymous',
-        messages: user.message_count || 0,
-        engagement: user.engagement_score || 0,
+        messages: user.message_count_24h,
+        engagement: user.message_count_24h, // Using message count as engagement for now
       }));
     },
     refetchInterval: 86400000, // Refresh every 24 hours
